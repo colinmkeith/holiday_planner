@@ -15,7 +15,7 @@
     .day-cell { padding: 6px; min-height: 40px; display:flex; align-items:flex-start; justify-content:center; cursor: pointer; border-radius:6px; user-select: none; }
     .day-cell.disabled { opacity: 0.45; cursor: default; }
     .day-cell .date-num { font-weight: 500; }
-    .day-cell.selected { background: #0d6efd; color: white; }
+    .day-cell.selected { background: #0d6efd !important; color: white; }
     .day-cell.weekend { background: rgba(13,110,253,0.06); }
     .day-cell.holiday { outline: 2px dashed #dc3545; }
     .weekday-headers { display:grid; grid-template-columns: repeat(7, 1fr); font-size: 0.85rem; color:#6c757d; text-align:center; margin-bottom:4px; }
@@ -64,6 +64,7 @@
             <hr>
 
             <h6 class="card-title">Selected Dates</h6>
+            <button id="exportIcsBtn" class="btn btn-sm btn-primary">Clear</button>
             <ul id="selected-dates" class="list-group mb-0">
               <li class="list-group-item">None</li>
             </ul>
@@ -252,7 +253,8 @@ function exportICS(){
     lines.push('DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z');
     lines.push('DTSTART;VALUE=DATE='+iso.replace(/-/g,''));
     lines.push('DTEND;VALUE=DATE='+toISODate(new Date(parseISODate(iso).getTime()+86400000)).replace(/-/g,''));
-    lines.push('SUMMARY:Holiday');
+    const summary = publicHolidayDates.has(iso) ? publicHolidayDates.get(iso) : 'Holiday';
+    lines.push('SUMMARY:' + summary);
     lines.push('END:VEVENT');
   });
   lines.push('END:VCALENDAR');

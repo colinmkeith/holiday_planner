@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Holiday Planner</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <style>
+    body { padding: 20px; background: #f8f9fa; }
+    .calendar-month { border: 1px solid #dee2e6; border-radius: .5rem; background: #fff; padding: 8px; margin-bottom: 12px; }
+    .month-name { font-weight: 600; text-align: center; margin-bottom: 6px; }
+    .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .day-cell { padding: 6px; min-height: 40px; display:flex; align-items:flex-start; justify-content:center; cursor: pointer; border-radius:6px; user-select: none; }
+    .day-cell.disabled { opacity: 0.45; cursor: default; }
+    .day-cell .date-num { font-weight: 500; }
+    .day-cell.selected { background: #0d6efd; color: white; }
+    .day-cell.weekend { background: rgba(13,110,253,0.06); }
+    .day-cell.holiday { outline: 2px dashed #dc3545; }
+    .weekday-headers { display:grid; grid-template-columns: repeat(7, 1fr); font-size: 0.85rem; color:#6c757d; text-align:center; margin-bottom:4px; }
+    .small-muted { font-size: .9rem; color:#6c757d; }
+    #selected-dates { max-height: 200px; overflow:auto; padding-left: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row g-3">
+      <!-- Left: calendars -->
+      <div class="col-lg-9">
+        <div id="calendars" class="row g-3"></div>
+      </div>
+
+      <!-- Right: controls -->
+      <div class="col-lg-3">
+        <div class="card">
+          <div class="card-body">
+            <label class="form-label">Total Holiday</label>
+            <div class="input-group mb-3">
+              <input id="totalHoliday" class="form-control" type="text" placeholder="80:00" aria-label="Total holiday (HH:MM)">
+              <span class="input-group-text">hours</span>
+            </div>
+
+            <label class="form-label">Year</label>
+            <select id="yearSelect" class="form-select mb-3"></select>
+
+            <label class="form-label">Location</label>
+            <select id="locationSelect" class="form-select mb-3">
+              <option selected="selected" value="england-and-wales">England and Wales</option>
+              <option value="scotland">Scotland</option>
+              <option value="northern-ireland">Northern Ireland</option>
+            </select>
+
+            <hr>
+
+            <div class="mb-2">
+              <h6 class="card-title">Remaining Holiday</h6>
+              <div>
+                <span id="remainingHoliday" class="fs-5">80:00</span>
+                <span class="small-muted">hours</span>
+              </div>
+            </div>
+
+            <hr>
+
+            <h6 class="card-title">Selected Dates</h6>
+            <ul id="selected-dates" class="list-group mb-0">
+              <li class="list-group-item">None</li>
+            </ul>
+
+            <hr>
+            <button id="exportIcsBtn" class="btn btn-sm btn-primary">Export ICS</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/*
+  Holiday planner SPA
+  - Fetches bank-holidays from https://www.gov.uk/bank-holidays.json and uses 'england-and-wales'
+  - Draws 12 month calendars for selected year, 3 months per row
+  - Click to toggle a date, Shift+click to range-select / range-unselect using last clicked
+  - Calculates used hours:
+      Mon-Thu: 7 hours 45 minutes (7.75h)
+      Fri: 3 hours
+      Sat/Sun or public holiday: 0 hours
+  - Subtracts used hours from TotalHoliday (format H:MM or HH:MM)
+  - Remaining displayed as H:MM with "hours" suffix, turns red if negative
+*/
+
+const GOV_BANK_HOLIDAYS_URL = 'https://www.gov.uk/bank-holidays.json';
+let publicHolidayRawData = new Map();
+let publicHolidayDates = new Map(); // ISO -> holiday name
+let selectedDates = new Set();
+let defaultLocation = 'england-and-wales';
+let lastClickedDate = null;
+
+function toISODate(d) {
+  return d.toISOString().split('T')[0];
+}
+function parseISODate(iso) {
+  const [y,m,d] = iso.split('-').map(Number);
+  return new Date(y,m-1,d);
+}
+function minutesToHHMM(mins) {
+  const sign = mins < 0 ? '-' : '';
+  mins = Math.abs(Math.round(mins));
+  return sign + Math.floor(mins/60) + ':' + String(mins%60).padStart(2,'0');
+}
+function hhmmToMinutes(hhmm) {
+  const [h,m] = hhmm.split(':').map(Number);
+  return h*60+m;
+}
+
+async function fetchBankHolidays() {
+  try {
+    const res = await fetch(GOV_BANK_HOLIDAYS_URL);
+    const data = await res.json();
+    return data;
+  } catch { return []; }
+}
+
+function setPublicHolidays(year) {
+  const loc = locationSelect.value;
+
+  if(!publicHolidaysRawData[loc]) {
+    loc = defaultLocation
+  }
+  events = publicHolidaysRawData[loc].events
+
+  publicHolidayDates.clear();
+  events.forEach(e => {
+    if(e.date.startsWith(year)) publicHolidayDates.set(e.date, e.title);
+  });
+}
+
+const calendarsEl = document.getElementById('calendars');
+const yearSelect = document.getElementById('yearSelect');
+const locationSelect = document.getElementById('locationSelect');
+const totalHolidayInput = document.getElementById('totalHoliday');
+const remainingEl = document.getElementById('remainingHoliday');
+const selectedDatesUL = document.getElementById('selected-dates');
+const exportBtn = document.getElementById('exportIcsBtn');
+
+function buildYearOptions() {
+  const currentYear = new Date().getFullYear();
+  for(let i=0;i<=5;i++){
+    const y=currentYear+i;
+    yearSelect.add(new Option(y,y));
+  }
+  yearSelect.value=currentYear;
+}
+
+function makeMonthCalendar(year, month) {
+  const first = new Date(year, month, 1);
+  const monthName = first.toLocaleString(undefined,{month:'long'});
+  const wrap=document.createElement('div');wrap.className='col-12 col-md-4';
+  const card=document.createElement('div');card.className='calendar-month';
+  card.innerHTML=`<div class="month-name">${monthName} ${year}</div>`;
+  const weekdays=document.createElement('div');
+  weekdays.className='weekday-headers';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(n=>{
+    const d=document.createElement('div');d.textContent=n;weekdays.appendChild(d);
+  });
+  card.appendChild(weekdays);
+
+  const grid=document.createElement('div');grid.className='day-grid';
+  let offset=(first.getDay()+6)%7; // Mon=0
+  for(let i=0;i<offset;i++) grid.appendChild(Object.assign(document.createElement('div'),{className:'day-cell disabled'}));
+  let daysInMonth=new Date(year,month+1,0).getDate();
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(year,month,d);
+    const iso=toISODate(date);
+    const cell=document.createElement('div');
+    cell.className='day-cell';cell.dataset.date=iso;
+    const dow=date.getDay();
+    if(dow===0||dow===6) cell.classList.add('weekend');
+    if(publicHolidayDates.has(iso)){
+      cell.classList.add('holiday');
+      cell.setAttribute('data-bs-toggle','tooltip');
+      cell.setAttribute('title',publicHolidayDates.get(iso));
+    }
+    cell.textContent=d;
+    cell.onclick=(ev)=>handleDateClick(iso,ev.shiftKey);
+    grid.appendChild(cell);
+  }
+  card.appendChild(grid);wrap.appendChild(card);
+  return wrap;
+}
+
+function renderCalendars(year){
+  calendarsEl.innerHTML='';
+  for(let m=0;m<12;m++) calendarsEl.appendChild(makeMonthCalendar(year,m));
+  refreshSelectionsUI();
+  // enable tooltips
+  [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el=>new bootstrap.Tooltip(el));
+}
+
+function handleDateClick(iso,shift){
+  if(shift && lastClickedDate){
+    let a=parseISODate(lastClickedDate),b=parseISODate(iso);
+    if(a>b) [a,b]=[b,a];
+    const range=[];for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)) range.push(toISODate(d));
+    const toggle=!selectedDates.has(iso);
+    range.forEach(x=>toggle?selectedDates.add(x):selectedDates.delete(x));
+  } else {
+    selectedDates.has(iso)?selectedDates.delete(iso):selectedDates.add(iso);
+  }
+  lastClickedDate=iso;
+  refreshSelectionsUI();updateTotals();
+}
+
+function refreshSelectionsUI(){
+  document.querySelectorAll('.day-cell').forEach(c=>{
+    if(c.dataset.date) c.classList.toggle('selected',selectedDates.has(c.dataset.date));
+  });
+  selectedDatesUL.innerHTML='';
+  [...selectedDates].sort().forEach(d=>{
+    const li=document.createElement('li');
+    li.className='list-group-item';
+    li.textContent=d;
+    selectedDatesUL.appendChild(li);
+  });
+}
+
+function computeUsedMinutes(){
+  let mins=0;
+  selectedDates.forEach(iso=>{
+    const d=parseISODate(iso),dow=d.getDay();
+    if(publicHolidayDates.has(iso)||dow===0||dow===6) return;
+    if(dow>=1&&dow<=4) mins+=465; else if(dow===5) mins+=180;
+  });
+  return mins;
+}
+function updateTotals(){
+  const total=hhmmToMinutes(totalHolidayInput.value||'0:00');
+  const used=computeUsedMinutes();
+  const rem=total-used;
+  remainingEl.textContent=minutesToHHMM(rem);
+  remainingEl.classList.toggle('text-danger',rem<0);
+}
+
+function exportICS(){
+  if(selectedDates.size===0){alert('No dates selected.');return;}
+  let lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Holiday Planner//EN'];
+  [...selectedDates].sort().forEach(iso=>{
+    lines.push('BEGIN:VEVENT');
+    lines.push('UID:'+iso+'@holidayplanner');
+    lines.push('DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z');
+    lines.push('DTSTART;VALUE=DATE='+iso.replace(/-/g,''));
+    lines.push('DTEND;VALUE=DATE='+toISODate(new Date(parseISODate(iso).getTime()+86400000)).replace(/-/g,''));
+    lines.push('SUMMARY:Holiday');
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  const blob=new Blob([lines.join('\r\n')],{type:'text/calendar'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='holidays.ics';a.click();
+  URL.revokeObjectURL(url);
+}
+
+(async()=>{
+  buildYearOptions();
+  publicHolidaysRawData=await fetchBankHolidays();
+  const year=parseInt(yearSelect.value);
+
+  setPublicHolidays(year);
+  renderCalendars(year);
+  updateTotals();
+
+  locationSelect.onchange=()=>{setPublicHolidays(yearSelect.value);
+    setPublicHolidays(yearSelect.value);
+    renderCalendars(yearSelect.value);
+    updateTotals();
+  }
+
+  yearSelect.onchange=()=>{
+    setPublicHolidays(yearSelect.value);
+    renderCalendars(yearSelect.value);
+    updateTotals();
+  }
+  totalHolidayInput.onchange=()=>updateTotals();
+  exportBtn.onclick=exportICS;
+})();
+</script>
+</body>
+</html>

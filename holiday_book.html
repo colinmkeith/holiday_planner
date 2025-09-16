@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Holiday Planner</title>
   <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <style>
     body { padding: 20px; background: #f8f9fa; }
@@ -63,8 +63,10 @@
 
             <hr>
 
-            <h6 class="card-title">Selected Dates</h6>
-            <button id="exportIcsBtn" class="btn btn-sm btn-primary">Clear</button>
+            <div  class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="card-title mb-0">Selected Dates</h6>
+              <button id="clearBtn" class="btn btn-sm btn-danger">Clear</button>
+            </div>
             <ul id="selected-dates" class="list-group mb-0">
               <li class="list-group-item">None</li>
             </ul>
@@ -77,7 +79,7 @@
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 <script>
 /*
   Holiday planner SPA
@@ -141,6 +143,7 @@ function setPublicHolidays(year) {
 const calendarsEl = document.getElementById('calendars');
 const yearSelect = document.getElementById('yearSelect');
 const locationSelect = document.getElementById('locationSelect');
+const clearBtn = document.getElementById('clearBtn');
 const totalHolidayInput = document.getElementById('totalHoliday');
 const remainingEl = document.getElementById('remainingHoliday');
 const selectedDatesUL = document.getElementById('selected-dates');
@@ -220,6 +223,15 @@ function handleDateClick(iso,shift){
    });
    selectedDatesUL.innerHTML='';
 
+   if(selectedDates.size === 0) {
+     const li=document.createElement('li');
+     li.className='list-group-item';
+     li.textContent = 'None'
+     selectedDatesUL.appendChild(li);
+     return;
+   }
+
+   i=false;
    [...selectedDates].sort().forEach(iso=>{
      const d = parseISODate(iso);
      const opts = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
@@ -242,9 +254,18 @@ function handleDateClick(iso,shift){
      const formatted = `${weekday}, ${day}${suffix(day)} ${month} ${year}`;
      const li=document.createElement('li');
      li.className='list-group-item';
-     li.textContent = publicHolidayDates.has(iso)
+     if(i === true) {
+       li.className +=' list-group-item-secondary';
+     }
+     i = !i;
+     const spantrash = document.createElement('span');
+     spantrash.className = '';
+     const spandate  = document.createElement('span');
+     spandate.textContent = publicHolidayDates.has(iso)
        ? `${formatted} (${publicHolidayDates.get(iso)})`
        : formatted;
+     li.appendChild(spantrash);
+     li.appendChild(spandate);
      selectedDatesUL.appendChild(li);
    });
  }
@@ -300,6 +321,13 @@ function exportICS(){
     setPublicHolidays(yearSelect.value);
     renderCalendars(yearSelect.value);
     updateTotals();
+  }
+
+  clearBtn.onclick =()=>{
+    selectedDates.clear();
+    refreshSelectionsUI();
+    updateTotals();
+    return false;
   }
 
   yearSelect.onchange=()=>{

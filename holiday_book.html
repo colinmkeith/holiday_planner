@@ -214,18 +214,41 @@ function handleDateClick(iso,shift){
   refreshSelectionsUI();updateTotals();
 }
 
-function refreshSelectionsUI(){
-  document.querySelectorAll('.day-cell').forEach(c=>{
-    if(c.dataset.date) c.classList.toggle('selected',selectedDates.has(c.dataset.date));
-  });
-  selectedDatesUL.innerHTML='';
-  [...selectedDates].sort().forEach(d=>{
-    const li=document.createElement('li');
-    li.className='list-group-item';
-    li.textContent=d;
-    selectedDatesUL.appendChild(li);
-  });
-}
+ function refreshSelectionsUI(){
+   document.querySelectorAll('.day-cell').forEach(c=>{
+     if(c.dataset.date) c.classList.toggle('selected',selectedDates.has(c.dataset.date));
+   });
+   selectedDatesUL.innerHTML='';
+
+   [...selectedDates].sort().forEach(iso=>{
+     const d = parseISODate(iso);
+     const opts = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+     let parts = d.toLocaleDateString(undefined, opts).split(' ');
+     // Extract pieces: e.g. "Wed, 7 Sep 2025"
+     const weekday = parts[0].replace(',','');
+     const day = d.getDate();
+     const month = d.toLocaleString(undefined,{month:'short'});
+     const year = d.getFullYear();
+     // Add ordinal suffix
+     const suffix = (n)=>{
+       if(n>=11 && n<=13) return 'th';
+       switch(n%10){
+         case 1: return 'st';
+         case 2: return 'nd';
+         case 3: return 'rd';
+         default: return 'th';
+       }
+     };
+     const formatted = `${weekday}, ${day}${suffix(day)} ${month} ${year}`;
+     const li=document.createElement('li');
+     li.className='list-group-item';
+     li.textContent = publicHolidayDates.has(iso)
+       ? `${formatted} (${publicHolidayDates.get(iso)})`
+       : formatted;
+     selectedDatesUL.appendChild(li);
+   });
+ }
+
 
 function computeUsedMinutes(){
   let mins=0;

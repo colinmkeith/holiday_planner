@@ -68,7 +68,7 @@
 
             <hr>
 
-            <div  class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
               <h6 class="card-title mb-0">Selected Dates</h6>
               <button id="clearBtn" class="btn btn-sm btn-danger">Clear</button>
             </div>
@@ -77,7 +77,12 @@
             </ul>
 
             <hr>
-            <button id="exportIcsBtn" class="btn btn-sm btn-primary">Export ICS</button>
+            <button id="exportIcsBtn" class="btn btn-sm btn-primary mb-3">Export ICS</button>
+
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="themeToggle">
+              <label class="form-check-label" for="themeToggle">Dark mode</label>
+            </div>
           </div>
         </div>
       </div>
@@ -107,6 +112,22 @@ let defaultLocation = 'england-and-wales';
 let lastClickedDate = null;
 
 document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+// initial theme: use saved preference if available, else system preference
+let savedTheme = localStorage.getItem('holidayPlannerTheme');
+if (savedTheme !== 'light' && savedTheme !== 'dark') {
+  savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+let currentTheme = savedTheme;
+document.documentElement.setAttribute('data-bs-theme', currentTheme);
+
+// theme toggle control
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.checked = (currentTheme === 'dark');
+themeToggle.addEventListener('change', () => {
+  currentTheme = themeToggle.checked ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-bs-theme', currentTheme);
+  localStorage.setItem('holidayPlannerTheme', currentTheme);
+});
 
 function toISODate(d) {
   return d.toISOString().split('T')[0];

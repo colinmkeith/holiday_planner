@@ -287,11 +287,20 @@ function handleDateClick(iso,shift){
      }
      i = !i;
      const spantrash = document.createElement('span');
-     spantrash.className = '';
+     spantrash.className = 'me-2 text-danger';
+     spantrash.innerHTML = '<i class="bi bi-trash"></i>';
+     spantrash.style.cursor = 'pointer';
+     spantrash.onclick = () => {
+       selectedDates.delete(iso);
+       refreshSelectionsUI();
+       updateTotals();
+     };
+
      const spandate  = document.createElement('span');
      spandate.textContent = publicHolidayDates.has(iso)
        ? `${formatted} (${publicHolidayDates.get(iso)})`
        : formatted;
+
      li.appendChild(spantrash);
      li.appendChild(spandate);
      selectedDatesUL.appendChild(li);

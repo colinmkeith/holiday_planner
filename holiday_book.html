@@ -52,7 +52,7 @@
           <div class="card-body">
             <label class="form-label">Total Holiday</label>
             <div class="input-group mb-3">
-              <input id="totalHoliday" class="form-control" type="text" placeholder="80:00" aria-label="Total holiday (HH:MM)">
+              <input id="totalHoliday" class="form-control" type="text" placeholder="Hours left e.g. 80:00" aria-label="Total holiday (HH:MM)">
               <span class="input-group-text">hours</span>
             </div>
 
@@ -307,12 +307,33 @@ function handleDateClick(iso,shift){
      };
 
      const spandate  = document.createElement('span');
-     spandate.textContent = publicHolidayDates.has(iso)
-       ? `${formatted} (${publicHolidayDates.get(iso)})`
-       : formatted;
+     spandate.className = 'me-2';
+     spandate.textContent = formatted;
+
+     if(publicHolidayDates.get(iso)) {
+       cost = '0';
+     } else if(weekday === "Sat" || weekday === "Sun") {
+       cost = '0';
+     } else if(weekday === "Fri") {
+       cost = '½';
+     } else {
+       cost = '1';
+     }
+
+     const spancost  = document.createElement('span');
+     spancost.className = 'me-2';
+     spancost.textContent = `(${cost})`;
 
      li.appendChild(spantrash);
      li.appendChild(spandate);
+     li.appendChild(spancost);
+
+     if(publicHolidayDates.has(iso)) {
+       const spanholiday  = document.createElement('span');
+       spanholiday.className = 'me-2';
+       spanholiday.textContent = ` (${publicHolidayDates.get(iso)})`;
+       li.appendChild(spanholiday);
+     }
      selectedDatesUL.appendChild(li);
    });
  }

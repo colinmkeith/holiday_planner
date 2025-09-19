@@ -264,7 +264,18 @@ function handleDateClick(iso,shift){
    if(selectedDates.size === 0) {
      const li=document.createElement('li');
      li.className='list-group-item';
-     li.textContent = 'None'
+
+     const spannone = document.createElement('span');
+     spannone.textContent = 'None'
+
+     const spantext=document.createElement('span');
+     spantext.textContent = 'Format: <date> (# days) (Holiday name)';
+
+     li.appendChild(spannone);
+     li.appendChild(document.createElement('br'));
+     li.appendChild(document.createElement('br'));
+     li.appendChild(spantext);
+
      selectedDatesUL.appendChild(li);
      return;
    }

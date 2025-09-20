@@ -406,25 +406,42 @@ function computeUsedMinutes() {
 }
 
 function updateTotals() {
-  const total = hhmmToMinutes(totalHolidayInput.value || '0:00');
-  const used = computeUsedMinutes();
-  const rem = total - used;
-  remainingEl.textContent = minutesToHHMM(rem);
-  remainingEl.classList.toggle('text-danger', rem < 0);
+  // parse totalHoliday input as minutes
+  const totalInput = totalHolidayInput.value.trim();
+  const totalMinutes = hhmmToMinutes(totalInput);
+  const usedMinutes = computeUsedMinutes();
+  if(Number.isNaN(totalMinutes)) {
+    remainingEl.textContent = 'Invalid';
+    remainingEl.classList.add('text-danger');
+  } else {
+    const remaining = totalMinutes - usedMinutes;
+    remainingEl.textContent = minutesToHHMM(remaining);
+    if(remaining < 0) remainingEl.classList.add('text-danger');
+    else remainingEl.classList.remove('text-danger');
+  }
 }
 
+/* ------------------ ICS export ------------------ */
 function exportICS() {
   if (selectedDates.size === 0) {
     alert('No dates selected.');
     return;
   }
-  let lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Holiday Planner//EN'];
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Holiday Planner//EN'
+  ];
   [...selectedDates].sort().forEach(iso => {
+    const next = new Date(parseISODate(iso).getTime() + 24*60*60*1000);
     lines.push('BEGIN:VEVENT');
     lines.push('UID:' + iso + '@holidayplanner');
     lines.push('DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z');
-    lines.push('DTSTART;VALUE=DATE=' + iso.replace(/-/g, ''));
-    lines.push('DTEND;VALUE=DATE=' + toISODate(new Date(parseISODate(iso).getTime() + 86400000)).replace(/-/g, ''));
+    // DTSTART is whole day; DTEND should be next day
+    lines.push('DTSTART;VALUE=DATE:' + iso.replace(/-/g,''));
+    lines.push('DTEND;VALUE=DATE:' + toISODate(next).replace(/-/g,''));
+    // include holiday name if present
     const summary = publicHolidayDates.has(iso) ? publicHolidayDates.get(iso) : 'Holiday';
     lines.push('SUMMARY:' + summary);
     lines.push('END:VEVENT');
@@ -435,7 +452,9 @@ function exportICS() {
   const a = document.createElement('a');
   a.href = url;
   a.download = 'holidays.ics';
+  document.body.appendChild(a); // ??
   a.click();
+  a.remove(); // ??
   URL.revokeObjectURL(url);
 }
 

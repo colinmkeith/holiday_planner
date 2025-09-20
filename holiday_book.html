@@ -508,7 +508,7 @@ function refreshSelectionsUI() {
         return 'th';
       }
     };
-    const formatted = `${weekday}, ${day} ${suffix(day)} ${month} ${year}`;
+    const formatted = `${weekday}, ${day}${suffix(day)} ${month} ${year}`;
     const li = document.createElement('li');
     li.className = 'list-group-item';
     if (i === true) {
@@ -536,12 +536,13 @@ function refreshSelectionsUI() {
     } else if (weekday === "Fri") {
       cost = '½';
     } else {
-      cost = '1';
+      cost = halfDays.get(iso) || '1';
+      if(cost === 0.5) cost = '½';
     }
 
     const spancost = document.createElement('span');
     spancost.className = 'me-2';
-    spancost.textContent = ' '+cost;
+    spancost.textContent = ` (${cost})`;
 
     li.appendChild(spantrash);
     li.appendChild(spandate);

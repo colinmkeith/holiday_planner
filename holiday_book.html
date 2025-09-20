@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Holiday Planner</title>
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -22,8 +22,8 @@
       transition: background-color 0.2s ease-in-out;
     }
     .day-cell:hover { cursor:pointer }
-
     #selected-dates { overflow:auto; padding-left: 1rem; }
+
     html[data-bs-theme="light"] body { background: #f8f9fa; }
     html[data-bs-theme="light"] .weekend { background: rgba(13,110,253,0.06); }
     html[data-bs-theme="light"] .calendar-month { border: 1px solid #dee2e6; background: #fff; }
@@ -41,18 +41,18 @@
 <body>
   <div class="container-fluid">
     <div class="row g-3">
-      <!-- Left: calendars -->
+      <!-- Left: calendars (3/4) -->
       <div class="col-lg-9">
         <div id="calendars" class="row g-3"></div>
       </div>
 
-      <!-- Right: controls -->
+      <!-- Right: controls (1/4) -->
       <div class="col-lg-3">
         <div class="card">
           <div class="card-body">
-            <label class="form-label">Total Holiday</label>
-            <div class="input-group mb-3">
-              <input id="totalHoliday" class="form-control" type="text" placeholder="Hours left e.g. 80:00" aria-label="Total holiday (HH:MM)">
+            <label class="form-label" for="totalHoliday">Total holiday</label>
+            <div class="input-group mb-3" id="totalHolidayWrapper">
+              <input id="totalHoliday" class="form-control" type="text" placeholder="Hours left e.g. 80:00" value="" aria-label="Total holiday (HH:MM)">
               <span class="input-group-text">hours</span>
             </div>
 
@@ -71,8 +71,8 @@
             <div class="mb-2">
               <h6 class="card-title">Remaining Holiday</h6>
               <div>
-                <span id="remainingHoliday" class="fs-5">80:00</span>
-                <span class="small-muted">hours</span>
+                <span id="remainingHoliday" class="fs-5">0:00</span>
+                <span class="hours-suffix small-muted">hours</span>
               </div>
             </div>
 

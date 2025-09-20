@@ -190,17 +190,22 @@ async function fetchBankHolidays() {
   }
 }
 
+/* ------------------ Public holidays mapping ------------------ */
 function setPublicHolidays(year) {
   const loc = locationSelect.value;
 
-  if (!publicHolidaysRawData[loc]) {
+  if (!publicHolidaysRawData.has(loc)) {
     loc = defaultLocation
   }
-  events = publicHolidaysRawData[loc].events
+
+  const events = publicHolidaysRawData.get(loc).events
 
   publicHolidayDates.clear();
+  if(!Array.isArray(events)) return;
   events.forEach(e => {
-    if (e.date.startsWith(year)) publicHolidayDates.set(e.date, e.title);
+    if (e.date && e.date.startsWith(String(year))) {
+      publicHolidayDates.set(e.date, e.title);
+    }
   });
 }
 

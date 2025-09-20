@@ -258,6 +258,7 @@ const selectedDatesUL = document.getElementById('selected-dates');
 const exportBtn = document.getElementById('exportIcsBtn');
 const arrowEl = document.getElementById('totalArrow');
 const rightCol = document.querySelector('.right-col');
+const historyToggle = document.getElementById('historyToggle');
 
 /* ------------------ Calendar rendering ------------------ */
 function buildYearOptions() {
@@ -611,11 +612,20 @@ function hideArrow() {
 /* ------------------ Controls & events ------------------ */
 function attachControls() {
   yearSelect.addEventListener('change', () => {
-    const year = parseInt(yearSelect.value, 10);
-    // Re-apply public holidays for new year (we stored events globally)
-    setPublicHolidays(year);
-    renderCalendars(year);
-    updateTotals();
+    changeInInputs();
+  });
+
+  locationSelect.addEventListener('change', () => {
+    changeInInputs();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    selectedDates.clear();
+    changeInInputs();
+  });
+
+  exportBtn.addEventListener('click', () => {
+    exportICS();
   });
 
   totalHolidayInput.addEventListener('input', () => {
@@ -627,48 +637,28 @@ function attachControls() {
   window.addEventListener('resize', () => {
     if(arrowEl.classList.contains('visible')) showArrowPointingAtInput();
   });
+
   window.addEventListener('scroll', () => {
     if(arrowEl.classList.contains('visible')) showArrowPointingAtInput();
   });
+}
 
-  exportBtn.addEventListener('click', exportICS);
+function changeInInputs() {
+  const year = parseInt(yearSelect.value, 10);
+  setPublicHolidays(year);
+  renderCalendars(year);
+  updateTotals();
 }
 
 /* ------------------ Initialization ------------------ */
 async function init() {
   setTheme();
   buildYearOptions();
-  attachControls();
   // Fetch bank-holidays once, store globally
   publicHolidaysRawData = await fetchBankHolidays();
+  attachControls();
 
-  // default year
-  const year = parseInt(yearSelect.value, 10);
-  setPublicHolidays(year);
-  renderCalendars(year);
-  updateTotals();
-
-  locationSelect.onchange = () => {
-    setPublicHolidays(yearSelect.value);
-    setPublicHolidays(yearSelect.value);
-    renderCalendars(yearSelect.value);
-    updateTotals();
-  }
-
-  clearBtn.onclick = () => {
-    selectedDates.clear();
-    refreshSelectionsUI();
-    updateTotals();
-    return false;
-  }
-
-  yearSelect.onchange = () => {
-    setPublicHolidays(yearSelect.value);
-    renderCalendars(yearSelect.value);
-    updateTotals();
-  }
-  totalHolidayInput.onchange = () => updateTotals();
-  exportBtn.onclick = exportICS;
+  changeInInputs();
 }
 
 init();

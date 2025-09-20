@@ -121,23 +121,25 @@ let selectedDates = new Set();
 let defaultLocation = 'england-and-wales';
 let lastClickedDate = null;
 
-document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
-// initial theme: use saved preference if available, else system preference
-let savedTheme = localStorage.getItem('holidayPlannerTheme');
-if (savedTheme !== 'light' && savedTheme !== 'dark') {
-  savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-let currentTheme = savedTheme;
-document.documentElement.setAttribute('data-bs-theme', currentTheme);
-
-// theme toggle control
-const themeToggle = document.getElementById('themeToggle');
-themeToggle.checked = (currentTheme === 'dark');
-themeToggle.addEventListener('change', () => {
-  currentTheme = themeToggle.checked ? 'dark' : 'light';
+function setTheme() {
+  document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+  // initial theme: use saved preference if available, else system preference
+  let savedTheme = localStorage.getItem('holidayPlannerTheme');
+  if (savedTheme !== 'light' && savedTheme !== 'dark') {
+    savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  let currentTheme = savedTheme;
   document.documentElement.setAttribute('data-bs-theme', currentTheme);
-  localStorage.setItem('holidayPlannerTheme', currentTheme);
-});
+
+  // theme toggle control
+  const themeToggle = document.getElementById('themeToggle');
+  themeToggle.checked = (currentTheme === 'dark');
+  themeToggle.addEventListener('change', () => {
+    currentTheme = themeToggle.checked ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-bs-theme', currentTheme);
+    localStorage.setItem('holidayPlannerTheme', currentTheme);
+  });
+}
 
 function toISODate(d) {
   return d.getFullYear() + "-" + (d.getMonth() + 1).toString().padStart(2, '0') + "-" + d.getDate();
@@ -437,6 +439,7 @@ function exportICS() {
 }
 
 (async() => {
+  setTheme();
   buildYearOptions();
   publicHolidaysRawData = await fetchBankHolidays();
   const year = parseInt(yearSelect.value);

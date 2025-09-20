@@ -282,9 +282,22 @@ function handleDateClick(iso, shift) {
   updateTotals();
 }
 
+/* ------------------ UI refresh ------------------ */
 function refreshSelectionsUI() {
-  document.querySelectorAll('.day-cell').forEach(c => {
-    if (c.dataset.date) c.classList.toggle('selected', selectedDates.has(c.dataset.date));
+  document.querySelectorAll('.day-cell').forEach(cell => {
+    const iso = cell.dataset.date;
+    if (!iso) return;
+    if (selectedDates.has(iso)) {
+      cell.classList.add('selected');
+    } else {
+      cell.classList.remove('selected');
+    }
+
+    if (publicHolidayDates.has(iso)) {
+      cell.classList.add('holiday');
+    } else {
+      cell.classList.remove('holiday');
+    }
   });
   selectedDatesUL.innerHTML = '';
 

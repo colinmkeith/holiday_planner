@@ -115,7 +115,7 @@
 */
 
 const GOV_BANK_HOLIDAYS_URL = 'https://www.gov.uk/bank-holidays.json';
-let publicHolidayRawData = new Map();
+let publicHolidaysRawData = new Map();
 let publicHolidayDates = new Map(); // ISO -> holiday name
 let selectedDates = new Set();
 let defaultLocation = 'england-and-wales';
@@ -438,12 +438,14 @@ function exportICS() {
   URL.revokeObjectURL(url);
 }
 
-(async() => {
+async function init() {
   setTheme();
   buildYearOptions();
+  // Fetch bank-holidays once, store globally
   publicHolidaysRawData = await fetchBankHolidays();
-  const year = parseInt(yearSelect.value);
 
+  // default year
+  const year = parseInt(yearSelect.value, 10);
   setPublicHolidays(year);
   renderCalendars(year);
   updateTotals();
@@ -469,7 +471,9 @@ function exportICS() {
   }
   totalHolidayInput.onchange = () => updateTotals();
   exportBtn.onclick = exportICS;
-})();
+}
+
+init();
 </script>
 </body>
 </html>

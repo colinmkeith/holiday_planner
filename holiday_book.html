@@ -540,7 +540,7 @@ function attachControls() {
   yearSelect.addEventListener('change', () => {
     const year = parseInt(yearSelect.value, 10);
     // Re-apply public holidays for new year (we stored events globally)
-    setPublicHolidaysFromEvents(publicHolidaysRawData || [], year);
+    setPublicHolidays(year);
     renderCalendars(year);
     updateTotals();
   });

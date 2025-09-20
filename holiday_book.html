@@ -140,20 +140,20 @@ themeToggle.addEventListener('change', () => {
 });
 
 function toISODate(d) {
-  return d.getFullYear() + "-"+ (d.getMonth()+1).toString().padStart(2, '0') +"-"+ d.getDate();
+  return d.getFullYear() + "-" + (d.getMonth() + 1).toString().padStart(2, '0') + "-" + d.getDate();
 }
 function parseISODate(iso) {
-  const [y,m,d] = iso.split('-').map(Number);
-  return new Date(y,m-1,d);
+  const[y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 function minutesToHHMM(mins) {
   const sign = mins < 0 ? '-' : '';
   mins = Math.abs(Math.round(mins));
-  return sign + Math.floor(mins/60) + ':' + String(mins%60).padStart(2,'0');
+  return sign + Math.floor(mins / 60) + ':' + String(mins % 60).padStart(2, '0');
 }
 function hhmmToMinutes(hhmm) {
-  const [h,m] = hhmm.split(':').map(Number);
-  return h*60+m;
+  const[h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
 }
 
 async function fetchBankHolidays() {
@@ -161,20 +161,22 @@ async function fetchBankHolidays() {
     const res = await fetch(GOV_BANK_HOLIDAYS_URL);
     const data = await res.json();
     return data;
-  } catch { return []; }
+  } catch {
+    return[];
+  }
 }
 
 function setPublicHolidays(year) {
   const loc = locationSelect.value;
 
-  if(!publicHolidaysRawData[loc]) {
+  if (!publicHolidaysRawData[loc]) {
     loc = defaultLocation
   }
   events = publicHolidaysRawData[loc].events
 
   publicHolidayDates.clear();
   events.forEach(e => {
-    if(e.date.startsWith(year)) publicHolidayDates.set(e.date, e.title);
+    if (e.date.startsWith(year)) publicHolidayDates.set(e.date, e.title);
   });
 }
 
@@ -189,234 +191,281 @@ const exportBtn = document.getElementById('exportIcsBtn');
 
 function buildYearOptions() {
   const currentYear = new Date().getFullYear();
-  for(let i=0;i<=5;i++){
-    const y=currentYear+i;
-    yearSelect.add(new Option(y,y));
+  for (let i = 0; i <= 5; i++) {
+    const y = currentYear + i;
+    yearSelect.add(new Option(y, y));
   }
-  yearSelect.value=currentYear;
+  yearSelect.value = currentYear;
 }
 
 function makeMonthCalendar(year, month) {
   const first = new Date(year, month, 1);
-  const monthName = first.toLocaleString(undefined,{month:'long'});
-  const wrap=document.createElement('div');wrap.className='col-12 col-md-4';
-  const card=document.createElement('div');card.className='calendar-month';
-  card.innerHTML=`<div class="month-name">${monthName} ${year}</div>`;
-  const weekdays=document.createElement('div');
-  weekdays.className='weekday-headers';
-  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(n=>{
-    const d=document.createElement('div');d.textContent=n;weekdays.appendChild(d);
+  const monthName = first.toLocaleString(undefined, { month: 'long' });
+
+  const wrap = document.createElement('div');
+  wrap.className = 'col-12 col-md-4';
+  const card = document.createElement('div');
+  card.className = 'calendar-month';
+
+  const monname = document.createElement('div');
+  monname.className = 'month-name';
+  monname.textContent = `${monthName} ${year}`;
+  card.appendChild(monname);
+
+  const weekdays = document.createElement('div');
+  weekdays.className = 'weekday-headers';
+  ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(n => {
+    const d = document.createElement('div');
+    d.textContent = n;
+    weekdays.appendChild(d);
   });
   card.appendChild(weekdays);
 
-  const grid=document.createElement('div');grid.className='day-grid';
-  let offset=(first.getDay()+6)%7; // Mon=0
-  for(let i=0;i<offset;i++) grid.appendChild(Object.assign(document.createElement('div'),{className:'day-cell disabled'}));
-  let daysInMonth=new Date(year,month+1,0).getDate();
-  for(let d=1;d<=daysInMonth;d++){
-    const date=new Date(year,month,d);
-    const iso=toISODate(date);
-    const cell=document.createElement('div');
-    cell.className='day-cell';cell.dataset.date=iso;
-    const dow=date.getDay();
-    if(dow===0||dow===6) cell.classList.add('weekend');
-    if(publicHolidayDates.has(iso)){
+  const grid = document.createElement('div');
+  grid.className = 'day-grid';
+  let offset = (first.getDay() + 6) % 7; // Mon=0
+
+  for (let i = 0; i < offset; i++) {
+    grid.appendChild(document.createElement('div'), { className: 'day-cell disabled' });
+  }
+
+  let daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const iso = toISODate(date);
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+    cell.dataset.date = iso;
+    const dow = date.getDay();
+    if (dow === 0 || dow === 6) cell.classList.add('weekend');
+    if (publicHolidayDates.has(iso)) {
       cell.classList.add('holiday');
-      cell.setAttribute('data-bs-toggle','tooltip');
-      cell.setAttribute('title',publicHolidayDates.get(iso));
+      cell.setAttribute('data-bs-toggle', 'tooltip');
+      cell.setAttribute('title', publicHolidayDates.get(iso));
     }
-    cell.textContent=d;
-    cell.onclick=(ev)=>handleDateClick(iso,ev.shiftKey);
+    cell.textContent = d;
+    cell.onclick = (ev) => handleDateClick(iso, ev.shiftKey);
     grid.appendChild(cell);
   }
-  card.appendChild(grid);wrap.appendChild(card);
+  card.appendChild(grid);
+  wrap.appendChild(card);
   return wrap;
 }
 
-function renderCalendars(year){
-  calendarsEl.innerHTML='';
-  for(let m=0;m<12;m++) calendarsEl.appendChild(makeMonthCalendar(year,m));
+function renderCalendars(year) {
+  calendarsEl.innerHTML = '';
+  for (let m = 0; m < 12; m++) {
+    calendarsEl.appendChild(makeMonthCalendar(year, m));
+  }
+
   refreshSelectionsUI();
   // enable tooltips
-  [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el=>new bootstrap.Tooltip(el));
+  [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
 }
 
-function handleDateClick(iso,shift){
-  if(shift && lastClickedDate){
-    let a=parseISODate(lastClickedDate),b=parseISODate(iso);
-    if(a>b) [a,b]=[b,a];
-    const range=[];for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)) range.push(toISODate(d));
-    const toggle=!selectedDates.has(iso);
-    range.forEach(x=>toggle?selectedDates.add(x):selectedDates.delete(x));
+function handleDateClick(iso, shift) {
+  if (shift && lastClickedDate) {
+    let a = parseISODate(lastClickedDate),
+    b = parseISODate(iso);
+    if (a > b)[a, b] = [b, a];
+    const range = [];
+    for (let d = new Date(a); d <= b; d.setDate(d.getDate() + 1)) range.push(toISODate(d));
+    const toggle = !selectedDates.has(iso);
+    range.forEach(x => toggle ? selectedDates.add(x) : selectedDates.delete(x));
   } else {
-    selectedDates.has(iso)?selectedDates.delete(iso):selectedDates.add(iso);
+    selectedDates.has(iso) ? selectedDates.delete(iso) : selectedDates.add(iso);
   }
-  lastClickedDate=iso;
-  refreshSelectionsUI();updateTotals();
+  lastClickedDate = iso;
+  refreshSelectionsUI();
+  updateTotals();
 }
 
- function refreshSelectionsUI(){
-   document.querySelectorAll('.day-cell').forEach(c=>{
-     if(c.dataset.date) c.classList.toggle('selected',selectedDates.has(c.dataset.date));
-   });
-   selectedDatesUL.innerHTML='';
+function refreshSelectionsUI() {
+  document.querySelectorAll('.day-cell').forEach(c => {
+    if (c.dataset.date) c.classList.toggle('selected', selectedDates.has(c.dataset.date));
+  });
+  selectedDatesUL.innerHTML = '';
 
-   if(selectedDates.size === 0) {
-     const li=document.createElement('li');
-     li.className='list-group-item';
+  if (selectedDates.size === 0) {
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
 
-     const spannone = document.createElement('span');
-     spannone.textContent = 'None'
+    const spannone = document.createElement('span');
+    spannone.textContent = 'None'
 
-     const spantext=document.createElement('span');
-     spantext.className='small-muted';
-     spantext.textContent = 'Format: <date> (# days) (Holiday name)';
+    const spantext = document.createElement('span');
+    spantext.className = 'small-muted';
+    spantext.textContent = 'Format: <date> (# days) (Holiday name)';
 
-     li.appendChild(spannone);
-     li.appendChild(document.createElement('br'));
-     li.appendChild(document.createElement('br'));
-     li.appendChild(spantext);
+    li.appendChild(spannone);
+    li.appendChild(document.createElement('br'));
+    li.appendChild(document.createElement('br'));
+    li.appendChild(spantext);
 
-     selectedDatesUL.appendChild(li);
-     return;
-   }
+    selectedDatesUL.appendChild(li);
+    return;
+  }
 
-   i=false;
-   [...selectedDates].sort().forEach(iso=>{
-     const d = parseISODate(iso);
-     const opts = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
-     let parts = d.toLocaleDateString(undefined, opts).split(' ');
-     // Extract pieces: e.g. "Wed, 7 Sep 2025"
-     const weekday = parts[0].replace(',','');
-     const day = d.getDate();
-     const month = d.toLocaleString(undefined,{month:'short'});
-     const year = d.getFullYear();
-     // Add ordinal suffix
-     const suffix = (n)=>{
-       if(n>=11 && n<=13) return 'th';
-       switch(n%10){
-         case 1: return 'st';
-         case 2: return 'nd';
-         case 3: return 'rd';
-         default: return 'th';
-       }
-     };
-     const formatted = `${weekday}, ${day}${suffix(day)} ${month} ${year}`;
-     const li=document.createElement('li');
-     li.className='list-group-item';
-     if(i === true) {
-       li.className +=' list-group-item-secondary';
-     }
-     i = !i;
-     const spantrash = document.createElement('span');
-     spantrash.className = 'me-2 text-danger';
-     spantrash.innerHTML = '<i class="bi bi-trash"></i>';
-     spantrash.style.cursor = 'pointer';
-     spantrash.onclick = () => {
-       selectedDates.delete(iso);
-       refreshSelectionsUI();
-       updateTotals();
-     };
+  i = false;
+  [...selectedDates].sort().forEach(iso => {
+    const d = parseISODate(iso);
+    const opts = {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    };
+    let parts = d.toLocaleDateString(undefined, opts).split(' ');
+    // Extract pieces: e.g. "Wed, 7 Sep 2025"
+    const weekday = parts[0].replace(',', '');
+    const day = d.getDate();
+    const month = d.toLocaleString(undefined, {
+      month: 'short'
+    });
+    const year = d.getFullYear();
+    // Add ordinal suffix
+    const suffix = (n) => {
+      if (n >= 11 && n <= 13) return 'th';
+      switch (n % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+      }
+    };
+    const formatted = `${weekday}, ${day} ${suffix(day)} ${month} ${year}`;
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    if (i === true) {
+      li.classList.add('list-group-item-secondary');
+    }
+    i = !i;
+    const spantrash = document.createElement('span');
+    spantrash.className = 'me-2 text-danger';
+    spantrash.innerHTML = '<i class="bi bi-trash"></i>';
+    spantrash.style.cursor = 'pointer';
+    spantrash.onclick = () => {
+      selectedDates.delete(iso);
+      refreshSelectionsUI();
+      updateTotals();
+    };
 
-     const spandate  = document.createElement('span');
-     spandate.className = 'me-2';
-     spandate.textContent = formatted;
+    const spandate = document.createElement('span');
+    spandate.className = 'me-2';
+    spandate.textContent = formatted;
 
-     if(publicHolidayDates.get(iso)) {
-       cost = '0';
-     } else if(weekday === "Sat" || weekday === "Sun") {
-       cost = '0';
-     } else if(weekday === "Fri") {
-       cost = '½';
-     } else {
-       cost = '1';
-     }
+    if (publicHolidayDates.get(iso)) {
+      cost = '0';
+    } else if (weekday === "Sat" || weekday === "Sun") {
+      cost = '0';
+    } else if (weekday === "Fri") {
+      cost = '½';
+    } else {
+      cost = '1';
+    }
 
-     const spancost  = document.createElement('span');
-     spancost.className = 'me-2';
-     spancost.textContent = `(${cost})`;
+    const spancost = document.createElement('span');
+    spancost.className = 'me-2';
+    spancost.textContent = ' '+cost;
 
-     li.appendChild(spantrash);
-     li.appendChild(spandate);
-     li.appendChild(spancost);
+    li.appendChild(spantrash);
+    li.appendChild(spandate);
+    li.appendChild(spancost);
 
-     if(publicHolidayDates.has(iso)) {
-       const spanholiday  = document.createElement('span');
-       spanholiday.className = 'me-2';
-       spanholiday.textContent = ` (${publicHolidayDates.get(iso)})`;
-       li.appendChild(spanholiday);
-     }
-     selectedDatesUL.appendChild(li);
-   });
- }
+    if (publicHolidayDates.has(iso)) {
+      const spanholiday = document.createElement('span');
+      spanholiday.className = 'me-2';
+      spanholiday.textContent = ' '+publicHolidayDates.get(iso);
+      li.appendChild(spanholiday);
+    }
+    selectedDatesUL.appendChild(li);
+  });
+}
 
+function computeUsedMinutes() {
+  let mins = 0;
+  selectedDates.forEach(iso => {
+    const d = parseISODate(iso);
+    const dow = d.getDay();
+    if (publicHolidayDates.has(iso) || dow === 0 || dow === 6)
+      return;
 
-function computeUsedMinutes(){
-  let mins=0;
-  selectedDates.forEach(iso=>{
-    const d=parseISODate(iso),dow=d.getDay();
-    if(publicHolidayDates.has(iso)||dow===0||dow===6) return;
-    if(dow>=1&&dow<=4) mins+=465; else if(dow===5) mins+=180;
+    if (dow >= 1 && dow <= 4) {
+      mins += 465;
+    } else if (dow === 5) {
+      mins += 180;
+    }
   });
   return mins;
 }
-function updateTotals(){
-  const total=hhmmToMinutes(totalHolidayInput.value||'0:00');
-  const used=computeUsedMinutes();
-  const rem=total-used;
-  remainingEl.textContent=minutesToHHMM(rem);
-  remainingEl.classList.toggle('text-danger',rem<0);
+function updateTotals() {
+  const total = hhmmToMinutes(totalHolidayInput.value || '0:00');
+  const used = computeUsedMinutes();
+  const rem = total - used;
+  remainingEl.textContent = minutesToHHMM(rem);
+  remainingEl.classList.toggle('text-danger', rem < 0);
 }
 
-function exportICS(){
-  if(selectedDates.size===0){alert('No dates selected.');return;}
-  let lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Holiday Planner//EN'];
-  [...selectedDates].sort().forEach(iso=>{
+function exportICS() {
+  if (selectedDates.size === 0) {
+    alert('No dates selected.');
+    return;
+  }
+  let lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Holiday Planner//EN'];
+  [...selectedDates].sort().forEach(iso => {
     lines.push('BEGIN:VEVENT');
-    lines.push('UID:'+iso+'@holidayplanner');
-    lines.push('DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z');
-    lines.push('DTSTART;VALUE=DATE='+iso.replace(/-/g,''));
-    lines.push('DTEND;VALUE=DATE='+toISODate(new Date(parseISODate(iso).getTime()+86400000)).replace(/-/g,''));
+    lines.push('UID:' + iso + '@holidayplanner');
+    lines.push('DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z');
+    lines.push('DTSTART;VALUE=DATE=' + iso.replace(/-/g, ''));
+    lines.push('DTEND;VALUE=DATE=' + toISODate(new Date(parseISODate(iso).getTime() + 86400000)).replace(/-/g, ''));
     const summary = publicHolidayDates.has(iso) ? publicHolidayDates.get(iso) : 'Holiday';
     lines.push('SUMMARY:' + summary);
     lines.push('END:VEVENT');
   });
   lines.push('END:VCALENDAR');
-  const blob=new Blob([lines.join('\r\n')],{type:'text/calendar'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='holidays.ics';a.click();
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'holidays.ics';
+  a.click();
   URL.revokeObjectURL(url);
 }
 
-(async()=>{
+(async() => {
   buildYearOptions();
-  publicHolidaysRawData=await fetchBankHolidays();
-  const year=parseInt(yearSelect.value);
+  publicHolidaysRawData = await fetchBankHolidays();
+  const year = parseInt(yearSelect.value);
 
   setPublicHolidays(year);
   renderCalendars(year);
   updateTotals();
 
-  locationSelect.onchange=()=>{setPublicHolidays(yearSelect.value);
+  locationSelect.onchange = () => {
+    setPublicHolidays(yearSelect.value);
     setPublicHolidays(yearSelect.value);
     renderCalendars(yearSelect.value);
     updateTotals();
   }
 
-  clearBtn.onclick =()=>{
+  clearBtn.onclick = () => {
     selectedDates.clear();
     refreshSelectionsUI();
     updateTotals();
     return false;
   }
 
-  yearSelect.onchange=()=>{
+  yearSelect.onchange = () => {
     setPublicHolidays(yearSelect.value);
     renderCalendars(yearSelect.value);
     updateTotals();
   }
-  totalHolidayInput.onchange=()=>updateTotals();
-  exportBtn.onclick=exportICS;
+  totalHolidayInput.onchange = () => updateTotals();
+  exportBtn.onclick = exportICS;
 })();
 </script>
 </body>

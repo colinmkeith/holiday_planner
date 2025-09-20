@@ -388,22 +388,23 @@ function refreshSelectionsUI() {
   });
 }
 
+/* ------------------ Totals ------------------ */
 function computeUsedMinutes() {
-  let mins = 0;
+  let totalMinutes = 0;
   selectedDates.forEach(iso => {
-    const d = parseISODate(iso);
-    const dow = d.getDay();
-    if (publicHolidayDates.has(iso) || dow === 0 || dow === 6)
-      return;
-
-    if (dow >= 1 && dow <= 4) {
-      mins += 465;
-    } else if (dow === 5) {
-      mins += 180;
+    const date = parseISODate(iso);
+    const dow = date.getDay(); // 0 Sun .. 6 Sat
+    if (publicHolidayDates.has(iso) || dow === 0 || dow === 6) {
+      // add 0
+    } else if(dow >=1 && dow <=4) {
+      totalMinutes += 7*60 + 45; // 465
+    } else if(dow === 5) {
+      totalMinutes += 3*60; // 180
     }
   });
-  return mins;
+  return totalMinutes;
 }
+
 function updateTotals() {
   const total = hhmmToMinutes(totalHolidayInput.value || '0:00');
   const used = computeUsedMinutes();

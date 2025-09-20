@@ -66,6 +66,12 @@
     html[data-bs-theme="dark"] .weekend { background: rgba(13,50,120,0.5); }
     html[data-bs-theme="dark"] .holiday { outline: 2px dashed #dc3545; }
     html[data-bs-theme="dark"] .weekday-headers { color:#6c757d; }
+
+    .day-cell.selected:not(.halfday) { background: #0d6efd !important; color: white; }
+    .day-cell.selected.halfday {
+      background-image: linear-gradient(bottom, #0d6efd, #0d6efd 50%, transparent 50%, transparent 100%);
+      background-image: -webkit-linear-gradient(bottom, #0d6efd, #0d6efd 50%, transparent 50%, transparent 100%);
+    }
   </style>
 </head>
 <body>
@@ -139,6 +145,7 @@
                 <li>Fri are worth <b>3hrs</b></li>
                 <li>Sat, Sun, and Bank Holidays are worth <b>0hrs</b></li>
                 <li>Shift-Click to select range of days</li>
+                <li>Ctrl-Click to select half-days (Mon-Thu)</li>
               </ul>
             </div>
 
@@ -146,6 +153,7 @@
             <div>
               <h6 class="card-title">TODO</h6>
               <ul>
+                <li>TODO: Ctrl-Shift-Click to select a range, select Mon-Thu as half-days</li>
                 <li>TODO: Make right hand sidebar sticky to viewport</li>
               </ul>
             </div>
@@ -184,6 +192,7 @@ const GOV_BANK_HOLIDAYS_URL = 'https://www.gov.uk/bank-holidays.json';
 let publicHolidaysRawData = new Map();
 let publicHolidayDates = new Map(); // ISO -> holiday name
 let selectedDates = new Set();
+let halfDays = new Map();
 let defaultLocation = 'england-and-wales';
 let lastClickedDate = null;
 
@@ -415,23 +424,58 @@ function renderCalendars(year) {
 
 /* ------------------ Selection logic ------------------ */
 function handleDateClick(isoDate, ev) {
+  const ctrlKey = ev.ctrlKey;
   const shiftKey = ev.shiftKey;
-  if(shiftKey && lastClickedDate) {
-    let a = parseISODate(lastClickedDate);
-    let b = parseISODate(isoDate);
-    if(a > b) [a,b] = [b,a];
+  let clickDate = parseISODate(isoDate);
+
+  if(shiftKey && !ctrlKey && lastClickedDate) {
+    let lastDate = parseISODate(lastClickedDate);
+    if(lastDate > clickDate) {
+      [lastDate, clickDate] = [clickDate, lastDate];
+    }
     const clickedSelected = selectedDates.has(isoDate);
     const actionSelect = !clickedSelected;
-    let cur = new Date(a);
-    while(cur <= b){
+    let cur = new Date(lastDate);
+    while(cur <= clickDate){
       const iso = toISODate(cur);
       if(actionSelect) selectedDates.add(iso);
       else selectedDates.delete(iso);
       cur.setDate(cur.getDate() + 1);
     }
+  } else if (ctrlKey) {
+    const halfOrFull = halfDays.get(isoDate);
+    const dow = clickDate.getDay(); // 0 Sun .. 6 Sat (Fri === 5)
+    const isSelected = selectedDates.has(isoDate);
+
+    // Don't add Fridays to halfDay (Sat, Sun already excluded)
+    if (dow === 5) {
+      // Toggle on/off as normal.
+      if(selectedDates.has(isoDate)) {
+        selectedDates.delete(isoDate);
+      } else {
+        selectedDates.add(isoDate);
+      }
+    } else {
+      if(halfOrFull === 0.5) {
+        halfDays.set(isoDate, 1);
+        selectedDates.add(isoDate);
+      }
+      else if(halfOrFull === 1) {
+        halfDays.delete(isoDate);
+        selectedDates.delete(isoDate);
+      }
+      else {
+        halfDays.set(isoDate, 0.5);
+        selectedDates.add(isoDate);
+      }
+    }
+
   } else {
-    if(selectedDates.has(isoDate)) selectedDates.delete(isoDate);
-    else selectedDates.add(isoDate);
+    if(selectedDates.has(isoDate)) {
+      selectedDates.delete(isoDate);
+    } else {
+      selectedDates.add(isoDate);
+    }
   }
   lastClickedDate = isoDate;
   refreshSelectionsUI();
@@ -453,6 +497,12 @@ function refreshSelectionsUI() {
       cell.classList.add('holiday');
     } else {
       cell.classList.remove('holiday');
+    }
+
+    if (halfDays.get(iso) === 0.5) {
+      cell.classList.add('halfday');
+    } else {
+      cell.classList.remove('halfday');
     }
   });
   selectedDatesUL.innerHTML = '';
@@ -566,6 +616,13 @@ function computeUsedMinutes() {
     const dow = date.getDay(); // 0 Sun .. 6 Sat
     if (publicHolidayDates.has(iso) || dow === 0 || dow === 6) {
       // add 0
+    } else if(halfDays.has(iso)) {
+      const v = halfDays.get(iso);
+      if(v === 0.5) {
+        totalMinutes += 3*60; // 180
+      } else if(v === 1) {
+        totalMinutes += 7*60 + 45; // 465
+      }
     } else if(dow >=1 && dow <=4) {
       totalMinutes += 7*60 + 45; // 465
     } else if(dow === 5) {
@@ -673,6 +730,7 @@ function attachControls() {
 
   clearBtn.addEventListener('click', () => {
     selectedDates.clear();
+    halfDays.clear();
     changeInInputs();
   });
 

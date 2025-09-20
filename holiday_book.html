@@ -141,29 +141,51 @@ function setTheme() {
   });
 }
 
+/* ------------------ Utilities ------------------ */
 function toISODate(d) {
-  return d.getFullYear() + "-" + (d.getMonth() + 1).toString().padStart(2, '0') + "-" + d.getDate();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
+
 function parseISODate(iso) {
-  const[y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d);
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m-1, d);
 }
+
 function minutesToHHMM(mins) {
   const sign = mins < 0 ? '-' : '';
   mins = Math.abs(Math.round(mins));
-  return sign + Math.floor(mins / 60) + ':' + String(mins % 60).padStart(2, '0');
-}
-function hhmmToMinutes(hhmm) {
-  const[h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return sign + String(h) + ':' + String(m).padStart(2,'0');
 }
 
+function hhmmToMinutes(hhmm) {
+  if (!hhmm) return NaN;
+  const parts = hhmm.trim().split(':');
+  if(parts.length === 1) {
+    const h = parseInt(parts[0], 10);
+    if(Number.isNaN(h)) return NaN;
+    return h*60;
+  }
+  if (parts.length !== 2) return NaN;
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  if (Number.isNaN(h) || Number.isNaN(m)) return NaN;
+  return h*60 + m;
+}
+
+/* ------------------ Fetch bank holidays ------------------ */
 async function fetchBankHolidays() {
   try {
     const res = await fetch(GOV_BANK_HOLIDAYS_URL);
-    const data = await res.json();
+    if(!res.ok) throw new Error('fetch fail ' + res.status);
+    const data = new Map(Object.entries(await res.json()));
     return data;
-  } catch {
+  } catch (err) {
+    console.warn('Could not fetch bank holidays. Continuing without them.', err);
     return[];
   }
 }

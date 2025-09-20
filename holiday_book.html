@@ -535,10 +535,37 @@ function exportICS() {
   URL.revokeObjectURL(url);
 }
 
+/* ------------------ Controls & events ------------------ */
+function attachControls() {
+  yearSelect.addEventListener('change', () => {
+    const year = parseInt(yearSelect.value, 10);
+    // Re-apply public holidays for new year (we stored events globally)
+    setPublicHolidaysFromEvents(publicHolidaysRawData || [], year);
+    renderCalendars(year);
+    updateTotals();
+  });
+
+  totalHolidayInput.addEventListener('input', () => {
+    // if user types just a number, convert to X:00 on blur; but for now update totals live
+    updateTotals();
+  });
+
+  // On window resize or scroll, reposition arrow if visible
+  window.addEventListener('resize', () => {
+    if(arrowEl.classList.contains('visible')) showArrowPointingAtInput();
+  });
+  window.addEventListener('scroll', () => {
+    if(arrowEl.classList.contains('visible')) showArrowPointingAtInput();
+  });
+
+  exportBtn.addEventListener('click', exportICS);
+}
+
 /* ------------------ Initialization ------------------ */
 async function init() {
   setTheme();
   buildYearOptions();
+  attachControls();
   // Fetch bank-holidays once, store globally
   publicHolidaysRawData = await fetchBankHolidays();
 

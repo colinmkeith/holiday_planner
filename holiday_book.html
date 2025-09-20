@@ -24,6 +24,34 @@
     .day-cell:hover { cursor:pointer }
     #selected-dates { overflow:auto; padding-left: 1rem; }
 
+    /* Container for the right column (position context for arrow) */
+    .right-col { position: relative; }
+
+    /* Arrow container */
+    .input-arrow {
+      position: absolute;
+      width: 250px;
+      height: 100px;
+      pointer-events: none; /* so it doesn't block clicks */
+      z-index: 2000;
+      transition: opacity .15s ease, transform .15s ease;
+      opacity: 0;
+      transform-origin: center;
+    }
+    .input-arrow.visible { opacity: 1; }
+
+    /* Small pulsing animation to draw attention */
+    @keyframes pulse {
+      0% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-4px) scale(1.02); }
+      100% { transform: translateY(0) scale(1); }
+    }
+    .input-arrow.attention { animation: pulse 1.2s infinite ease-in-out; }
+
+    /* For accessibility: visually-hidden label describing arrow target */
+    .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+
     html[data-bs-theme="light"] body { background: #f8f9fa; }
     html[data-bs-theme="light"] .weekend { background: rgba(13,110,253,0.06); }
     html[data-bs-theme="light"] .calendar-month { border: 1px solid #dee2e6; background: #fff; }
@@ -46,8 +74,8 @@
         <div id="calendars" class="row g-3"></div>
       </div>
 
-      <!-- Right: controls (1/4) -->
-      <div class="col-lg-3">
+      <!-- Right: controls (1/4). right-col is positioning context for the arrow -->
+      <div class="col-lg-3 right-col">
         <div class="card">
           <div class="card-body">
             <label class="form-label" for="totalHoliday">Total holiday</label>
@@ -95,6 +123,16 @@
             </div>
           </div>
         </div>
+
+        <!-- SVG arrow; initially hidden. It's an arrow pointing right (→). We position it to point at the input. -->
+        <svg id="totalArrow" class="input-arrow" viewBox="0 0 500 200" role="img" aria-hidden="true">
+          <g>
+            <polygon points="380,0 500,100 380,200 380,140 0,140 0,60 380,60" fill="#ffc107" stroke="#b8860b" stroke-width="6"></polygon>
+            <text x="20" y="115" font-family="Verdana" font-size="35" fill="black">Enter Remaining Time</text>
+          </g>
+        </svg>
+
+        <span class="sr-only" id="arrowDescription">Arrow points to Total holiday input when it is empty</span>
       </div>
     </div>
   </div>
@@ -218,6 +256,8 @@ const totalHolidayInput = document.getElementById('totalHoliday');
 const remainingEl = document.getElementById('remainingHoliday');
 const selectedDatesUL = document.getElementById('selected-dates');
 const exportBtn = document.getElementById('exportIcsBtn');
+const arrowEl = document.getElementById('totalArrow');
+const rightCol = document.querySelector('.right-col');
 
 /* ------------------ Calendar rendering ------------------ */
 function buildYearOptions() {
@@ -496,6 +536,9 @@ function updateTotals() {
     if(remaining < 0) remainingEl.classList.add('text-danger');
     else remainingEl.classList.remove('text-danger');
   }
+
+  // update arrow visibility whenever totals update
+  updateArrowVisibility();
 }
 
 /* ------------------ ICS export ------------------ */
@@ -533,6 +576,36 @@ function exportICS() {
   a.click();
   a.remove(); // ??
   URL.revokeObjectURL(url);
+}
+
+/* ------------------ Arrow logic ------------------ */
+
+function updateArrowVisibility() {
+  // Show arrow only when totalHoliday input is empty or whitespace
+  const empty = (totalHolidayInput.value || '').trim().length === 0;
+  if(empty) {
+    showArrowPointingAtInput();
+  } else {
+    hideArrow();
+  }
+}
+
+function showArrowPointingAtInput() {
+  // Ensure arrow is visible and placed to point at the input's left side (arrow points right).
+  const inputRect = totalHolidayInput.getBoundingClientRect();
+  const arrowRect = arrowEl.getBoundingClientRect();
+
+  arrowEl.style.left = '-'+ new String(arrowRect.width - (inputRect.left - arrowRect.left)) + 'px';
+  arrowEl.style.top = parseInt(inputRect.height / 2, 10) + 'px';
+
+  arrowEl.classList.add('visible','attention');
+  // also make sure tooltips or other events don't get broken by adding aria description
+  arrowEl.setAttribute('aria-hidden','false');
+}
+
+function hideArrow() {
+  arrowEl.classList.remove('visible','attention');
+  arrowEl.setAttribute('aria-hidden','true');
 }
 
 /* ------------------ Controls & events ------------------ */

@@ -13,7 +13,8 @@
     .month-name { font-weight: 600; text-align: center; margin-bottom: 6px; }
     .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
     .day-cell { padding: 6px; min-height: 40px; display:flex; align-items:flex-start; justify-content:center; cursor: pointer; border-radius:6px; user-select: none; }
-    .day-cell.disabled { opacity: 0.45; cursor: default; }
+    .day-cell.disabled { opacity: 0.45; }
+    .day-cell.historical{ opacity: 0.2; }
     .day-cell .date-num { font-weight: 500; }
     .weekday-headers { display:grid; grid-template-columns: repeat(7, 1fr); font-size: 0.85rem; text-align:center; margin-bottom:4px; }
     .small-muted { font-size: .9rem; }
@@ -22,10 +23,13 @@
       transition: background-color 0.2s ease-in-out;
     }
     .day-cell:hover { cursor:pointer }
+    .day-cell.disabled:hover { opacity: 0.45; cursor: default; }
+    .day-cell.historical:hover { cursor:not-allowed; }
     #selected-dates { overflow:auto; padding-left: 1rem; }
-
-    /* Container for the right column (position context for arrow) */
-    .right-col { position: relative; }
+/*
+    .sticky-xxl-top { position: fixed; right: 0; }
+    .sticky-xl-top { position: fixed; right: 0; }
+*/
 
     /* Arrow container */
     .input-arrow {
@@ -74,8 +78,8 @@
         <div id="calendars" class="row g-3"></div>
       </div>
 
-      <!-- Right: controls (1/4). right-col is positioning context for the arrow -->
-      <div class="col-lg-3 right-col">
+      <!-- Right: controls (1/4) -->
+      <div class="col-lg-3">
         <div class="card">
           <div class="card-body">
             <label class="form-label" for="totalHoliday">Total holiday</label>
@@ -120,6 +124,11 @@
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" id="themeToggle">
               <label class="form-check-label" for="themeToggle">Dark mode</label>
+            </div>
+
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" checked="checked" id="historyToggle">
+              <label class="form-check-label" for="historyToggle">Block Historical Dates</label>
             </div>
           </div>
         </div>
@@ -257,7 +266,6 @@ const remainingEl = document.getElementById('remainingHoliday');
 const selectedDatesUL = document.getElementById('selected-dates');
 const exportBtn = document.getElementById('exportIcsBtn');
 const arrowEl = document.getElementById('totalArrow');
-const rightCol = document.querySelector('.right-col');
 const historyToggle = document.getElementById('historyToggle');
 
 /* ------------------ Calendar rendering ------------------ */
@@ -277,11 +285,14 @@ function buildYearOptions() {
 
 function clearCalendars() {
   calendarsEl.innerHTML = '';
+  today = false;
 }
 
 function makeMonthCalendar(year, monthIndex) {
   const monthDate = new Date(year, monthIndex, 1);
   const monthName = monthDate.toLocaleString(undefined, { month: 'long' });
+
+  const now = new Date();
 
   const wrapper = document.createElement('div');
   wrapper.className = 'col-12 col-md-4';
@@ -324,12 +335,28 @@ function makeMonthCalendar(year, monthIndex) {
     cell.className = 'day-cell';
     cell.dataset.date = iso;
 
+    // If historicalToggle not checked then don't treat as historical
+    const historical = historyToggle.checked ? date < now : false;
+    if (historical) {
+      cell.classList.add('historical')
+    }
+
+    const isosplit = iso.split('-');
+    if (parseInt(isosplit[0], 10) === now.getFullYear() &&
+        parseInt(isosplit[1], 10) === now.getMonth()+1  &&
+        parseInt(isosplit[2], 10) === now.getDate() ) {
+      cell.classList.add('today');
+      today = cell;
+    }
+
     const dow = date.getDay();
-    if (dow === 0 || dow === 6) cell.classList.add('weekend');
+    if (dow === 0 || dow === 6)
+      cell.classList.add('weekend');
+
     if (publicHolidayDates.has(iso)) {
       cell.classList.add('holiday');
       cell.setAttribute('data-bs-toggle', 'tooltip');
-      cell.setAttribute('title', publicHolidayDates.get(iso));
+      cell.setAttribute('title', (historical ? 'Was ' : '') + publicHolidayDates.get(iso));
     }
 
     const num = document.createElement('div');
@@ -340,6 +367,7 @@ function makeMonthCalendar(year, monthIndex) {
     cell.addEventListener('click', (ev) => {
       ev.preventDefault();
       if(cell.classList.contains('disabled')) return;
+      if(cell.classList.contains('historical')) return;
       handleDateClick(iso, ev.shiftKey);
     });
 
@@ -361,6 +389,9 @@ function renderCalendars(year) {
 
   // Enable bootstrap tooltips for any holiday cells
   [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
+  if(today !== false) {
+    today.scrollIntoView();
+  }
 }
 
 /* ------------------ Selection logic ------------------ */
@@ -631,6 +662,10 @@ function attachControls() {
   totalHolidayInput.addEventListener('input', () => {
     // if user types just a number, convert to X:00 on blur; but for now update totals live
     updateTotals();
+  });
+
+  historyToggle.addEventListener('change', () => {
+    changeInInputs();
   });
 
   // On window resize or scroll, reposition arrow if visible

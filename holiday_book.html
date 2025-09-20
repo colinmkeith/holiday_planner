@@ -209,6 +209,7 @@ function setPublicHolidays(year) {
   });
 }
 
+/* ------------------ DOM refs ------------------ */
 const calendarsEl = document.getElementById('calendars');
 const yearSelect = document.getElementById('yearSelect');
 const locationSelect = document.getElementById('locationSelect');
@@ -218,11 +219,17 @@ const remainingEl = document.getElementById('remainingHoliday');
 const selectedDatesUL = document.getElementById('selected-dates');
 const exportBtn = document.getElementById('exportIcsBtn');
 
+/* ------------------ Calendar rendering ------------------ */
 function buildYearOptions() {
-  const currentYear = new Date().getFullYear();
-  for (let i = 0; i <= 5; i++) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  yearSelect.innerHTML = '';
+  for(let i=0;i<=5;i++){
     const y = currentYear + i;
-    yearSelect.add(new Option(y, y));
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSelect.appendChild(opt);
   }
   yearSelect.value = currentYear;
 }
@@ -528,6 +535,7 @@ function exportICS() {
   URL.revokeObjectURL(url);
 }
 
+/* ------------------ Initialization ------------------ */
 async function init() {
   setTheme();
   buildYearOptions();

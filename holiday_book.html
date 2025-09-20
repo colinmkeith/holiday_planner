@@ -265,19 +265,26 @@ function renderCalendars(year) {
   [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
 }
 
-function handleDateClick(iso, shift) {
-  if (shift && lastClickedDate) {
-    let a = parseISODate(lastClickedDate),
-    b = parseISODate(iso);
-    if (a > b)[a, b] = [b, a];
-    const range = [];
-    for (let d = new Date(a); d <= b; d.setDate(d.getDate() + 1)) range.push(toISODate(d));
-    const toggle = !selectedDates.has(iso);
-    range.forEach(x => toggle ? selectedDates.add(x) : selectedDates.delete(x));
+/* ------------------ Selection logic ------------------ */
+function handleDateClick(isoDate, shiftKey) {
+  if(shiftKey && lastClickedDate) {
+    let a = parseISODate(lastClickedDate);
+    let b = parseISODate(isoDate);
+    if(a > b) [a,b] = [b,a];
+    const clickedSelected = selectedDates.has(isoDate);
+    const actionSelect = !clickedSelected;
+    let cur = new Date(a);
+    while(cur <= b){
+      const iso = toISODate(cur);
+      if(actionSelect) selectedDates.add(iso);
+      else selectedDates.delete(iso);
+      cur.setDate(cur.getDate() + 1);
+    }
   } else {
-    selectedDates.has(iso) ? selectedDates.delete(iso) : selectedDates.add(iso);
+    if(selectedDates.has(isoDate)) selectedDates.delete(isoDate);
+    else selectedDates.add(isoDate);
   }
-  lastClickedDate = iso;
+  lastClickedDate = isoDate;
   refreshSelectionsUI();
   updateTotals();
 }

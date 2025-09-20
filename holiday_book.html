@@ -200,6 +200,10 @@ function buildYearOptions() {
   yearSelect.value = currentYear;
 }
 
+function clearCalendars() {
+  calendarsEl.innerHTML = '';
+}
+
 function makeMonthCalendar(year, month) {
   const first = new Date(year, month, 1);
   const monthName = first.toLocaleString(undefined, { month: 'long' });
@@ -255,13 +259,14 @@ function makeMonthCalendar(year, month) {
 }
 
 function renderCalendars(year) {
-  calendarsEl.innerHTML = '';
+  clearCalendars();
   for (let m = 0; m < 12; m++) {
     calendarsEl.appendChild(makeMonthCalendar(year, m));
   }
 
   refreshSelectionsUI();
-  // enable tooltips
+
+  // Enable bootstrap tooltips for any holiday cells
   [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
 }
 

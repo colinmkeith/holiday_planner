@@ -368,7 +368,7 @@ function makeMonthCalendar(year, monthIndex) {
       ev.preventDefault();
       if(cell.classList.contains('disabled')) return;
       if(cell.classList.contains('historical')) return;
-      handleDateClick(iso, ev.shiftKey);
+      handleDateClick(iso, ev);
     });
 
     grid.appendChild(cell);
@@ -395,7 +395,8 @@ function renderCalendars(year) {
 }
 
 /* ------------------ Selection logic ------------------ */
-function handleDateClick(isoDate, shiftKey) {
+function handleDateClick(isoDate, ev) {
+  const shiftKey = ev.shiftKey;
   if(shiftKey && lastClickedDate) {
     let a = parseISODate(lastClickedDate);
     let b = parseISODate(isoDate);

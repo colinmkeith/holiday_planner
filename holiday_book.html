@@ -204,44 +204,51 @@ function clearCalendars() {
   calendarsEl.innerHTML = '';
 }
 
-function makeMonthCalendar(year, month) {
-  const first = new Date(year, month, 1);
-  const monthName = first.toLocaleString(undefined, { month: 'long' });
+function makeMonthCalendar(year, monthIndex) {
+  const monthDate = new Date(year, monthIndex, 1);
+  const monthName = monthDate.toLocaleString(undefined, { month: 'long' });
 
-  const wrap = document.createElement('div');
-  wrap.className = 'col-12 col-md-4';
+  const wrapper = document.createElement('div');
+  wrapper.className = 'col-12 col-md-4';
   const card = document.createElement('div');
   card.className = 'calendar-month';
 
-  const monname = document.createElement('div');
-  monname.className = 'month-name';
-  monname.textContent = `${monthName} ${year}`;
-  card.appendChild(monname);
+  const header = document.createElement('div');
+  header.className = 'month-name';
+  header.textContent = `${monthName} ${year}`;
+  card.appendChild(header);
 
-  const weekdays = document.createElement('div');
-  weekdays.className = 'weekday-headers';
-  ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(n => {
-    const d = document.createElement('div');
-    d.textContent = n;
-    weekdays.appendChild(d);
-  });
-  card.appendChild(weekdays);
+  const weekdayHeader = document.createElement('div');
+  weekdayHeader.className = 'weekday-headers';
+  const base = new Date(Date.UTC(2021, 7, 2)); // Monday
+  for (let d = 0; d < 7; d++) {
+    const dn = new Date(base);
+    dn.setDate(base.getDate() + d);
+    const el = document.createElement('div');
+    el.textContent = dn.toLocaleString(undefined, { weekday: 'short' });
+    weekdayHeader.appendChild(el);
+  }
+  card.appendChild(weekdayHeader);
 
   const grid = document.createElement('div');
   grid.className = 'day-grid';
-  let offset = (first.getDay() + 6) % 7; // Mon=0
 
-  for (let i = 0; i < offset; i++) {
-    grid.appendChild(document.createElement('div'), { className: 'day-cell disabled' });
+  const firstDow = monthDate.getDay();
+  const offset = (firstDow + 6) % 7;
+  for(let i=0;i<offset;i++){
+    const blank = document.createElement('div');
+    blank.className = 'day-cell disabled';
+    grid.appendChild(blank);
   }
 
-  let daysInMonth = new Date(year, month + 1, 0).getDate();
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(year, month, d);
+  const daysInMonth = new Date(year, monthIndex+1, 0).getDate();
+  for(let d=1; d<=daysInMonth; d++){
+    const date = new Date(year, monthIndex, d);
     const iso = toISODate(date);
     const cell = document.createElement('div');
     cell.className = 'day-cell';
     cell.dataset.date = iso;
+
     const dow = date.getDay();
     if (dow === 0 || dow === 6) cell.classList.add('weekend');
     if (publicHolidayDates.has(iso)) {
@@ -249,13 +256,24 @@ function makeMonthCalendar(year, month) {
       cell.setAttribute('data-bs-toggle', 'tooltip');
       cell.setAttribute('title', publicHolidayDates.get(iso));
     }
-    cell.textContent = d;
-    cell.onclick = (ev) => handleDateClick(iso, ev.shiftKey);
+
+    const num = document.createElement('div');
+    num.className = 'date-num';
+    num.textContent = d;
+    cell.appendChild(num);
+
+    cell.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      if(cell.classList.contains('disabled')) return;
+      handleDateClick(iso, ev.shiftKey);
+    });
+
     grid.appendChild(cell);
   }
+
   card.appendChild(grid);
-  wrap.appendChild(card);
-  return wrap;
+  wrapper.appendChild(card);
+  return wrapper;
 }
 
 function renderCalendars(year) {

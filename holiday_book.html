@@ -352,12 +352,14 @@ function makeMonthCalendar(year, monthIndex) {
 
   const grid = document.createElement('div');
   grid.className = 'day-grid';
+  grid.setAttribute('role', 'grid');
 
   const firstDow = monthDate.getDay();
   const offset = (firstDow + 6) % 7;
   for(let i=0;i<offset;i++){
     const blank = document.createElement('div');
     blank.className = 'day-cell disabled';
+    blank.setAttribute('role', 'gridcell');
     grid.appendChild(blank);
   }
 
@@ -368,6 +370,7 @@ function makeMonthCalendar(year, monthIndex) {
     const cell = document.createElement('div');
     cell.className = 'day-cell';
     cell.dataset.date = iso;
+    cell.setAttribute('role', 'gridcell');
 
     // If historicalToggle not checked then don't treat as historical
     const historical = historyToggle.checked ? date < now : false;

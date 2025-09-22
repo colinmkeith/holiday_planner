@@ -265,6 +265,10 @@ function hhmmToMinutes(hhmm) {
   return h*60 + m;
 }
 
+function rebuildTooltips() {
+  [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
+}
+
 /* ------------------ Fetch bank holidays ------------------ */
 async function fetchBankHolidays() {
   try {
@@ -440,7 +444,7 @@ function renderCalendars(year) {
   refreshSelectionsUI();
 
   // Enable bootstrap tooltips for any holiday cells
-  [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
+  rebuildTooltips();
   if(today !== false) {
     today.scrollIntoView();
   }
@@ -637,6 +641,7 @@ function refreshSelectionsUI() {
     }
     selectedDatesUL.appendChild(li);
   });
+  rebuildTooltips();
 }
 
 /* ------------------ Totals ------------------ */

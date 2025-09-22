@@ -625,8 +625,14 @@ function refreshSelectionsUI() {
 
     if (publicHolidayDates.has(iso)) {
       const spanholiday = document.createElement('span');
-      spanholiday.className = 'me-2';
-      spanholiday.textContent = ' '+publicHolidayDates.get(iso);
+      spanholiday.className = 'holiday';
+      spanholiday.textContent = publicHolidayDates.get(iso);
+      li.appendChild(spanholiday);
+    }
+    else if (weekday === "Sat" || weekday === "Sun") {
+      const spanholiday = document.createElement('span');
+      spanholiday.className = 'weekend';
+      spanholiday.textContent = 'Weekend';
       li.appendChild(spanholiday);
     }
     selectedDatesUL.appendChild(li);

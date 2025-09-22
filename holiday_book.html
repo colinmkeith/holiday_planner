@@ -265,6 +265,14 @@ function hhmmToMinutes(hhmm) {
   return h*60 + m;
 }
 
+function formatDateISO(d) {
+  // Always returns YYYY-MM-DD
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function formatDateLong(d) {
   // Example output: "Tue, 23rd Sep 2025"
   const weekday = d.toLocaleDateString(undefined, { weekday: 'short' });
@@ -398,7 +406,7 @@ function makeMonthCalendar(year, monthIndex) {
   const daysInMonth = new Date(year, monthIndex+1, 0).getDate();
   for(let d=1; d<=daysInMonth; d++){
     const date = new Date(year, monthIndex, d);
-    const iso = toISODate(date);
+    const iso = formatDateISO(date);
     const cell = document.createElement('div');
     cell.className = 'day-cell';
     cell.dataset.date = iso;
@@ -569,7 +577,7 @@ function refreshSelectionsUI() {
   }
 
   i = false;
-  [...selectedDates].sort().forEach(iSo => {
+  [...selectedDates].sort().forEach(iso => {
     const d = parseISODate(iso);
     const formatted = formatDateLong(d);
     const li = document.createElement('li');
@@ -598,6 +606,8 @@ function refreshSelectionsUI() {
     const spandate = document.createElement('span');
     spandate.className = 'me-1 date';
     spandate.textContent = formatted;
+
+    const weekday = formatted.split(', ')[0];
 
     if (publicHolidayDates.get(iso)) {
       cost = '0 days';
@@ -699,7 +709,7 @@ function exportICS() {
     lines.push('DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z');
     // DTSTART is whole day; DTEND should be next day
     lines.push('DTSTART;VALUE=DATE:' + iso.replace(/-/g,''));
-    lines.push('DTEND;VALUE=DATE:' + toISODate(next).replace(/-/g,''));
+    lines.push('DTEND;VALUE=DATE:' + formatDateISO(next).replace(/-/g,''));
     // include holiday name if present
     const summary = publicHolidayDates.has(iso) ? publicHolidayDates.get(iso) : 'Holiday';
     lines.push('SUMMARY:' + summary);

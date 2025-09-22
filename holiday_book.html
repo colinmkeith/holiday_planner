@@ -230,13 +230,6 @@ function setTheme() {
 }
 
 /* ------------------ Utilities ------------------ */
-function toISODate(d) {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
 function parseISODate(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m-1, d);
@@ -500,7 +493,7 @@ function handleDateClick(isoDate, ev) {
     const actionSelect = !clickedSelected;
     let cur = new Date(lastDate);
     while(cur <= clickDate){
-      const iso = toISODate(cur);
+      const iso = formatDateISO(cur);
       if(actionSelect) selectedDates.add(iso);
       else selectedDates.delete(iso);
       cur.setDate(cur.getDate() + 1);

@@ -266,6 +266,16 @@ function formatDateISO(d) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function formatDateISO(d) {
+  // Always returns YYYY-MM-DD
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+
+
 function formatDateLong(d) {
   // Example output: "Tue, 23rd Sep 2025"
   const weekday = d.toLocaleDateString(undefined, { weekday: 'short' });
@@ -609,21 +619,19 @@ function refreshSelectionsUI() {
     const weekday = formatted.split(', ')[0];
 
     if (publicHolidayDates.get(iso)) {
-      cost = '0 days';
-    } else if (weekday === "Sat" || weekday === "Sun") {
-      cost = '0 days';
-    } else if (weekday === "Fri") {
-      cost = '½ day';
+       cost = 0;
     } else {
-      cost = halfDays.get(iso) || '1';
-      if(cost === 0.5)
-        cost = '½';
-      cost += ' day';
+      cost = getHolidayCost(iso);
     }
+
+    let costLabel;
+    if (cost === 0) costLabel = '0 days';
+    else if (cost === 0.5) costLabel = '½ day';
+    else costLabel = cost + ' day';
 
     const spancost = document.createElement('span');
     spancost.className = 'me-1 cost';
-    spancost.textContent = `(${cost})`;
+    spancost.textContent = `(${costLabel})`;
 
     li.appendChild(spantrash);
     li.appendChild(spandate);
@@ -647,25 +655,32 @@ function refreshSelectionsUI() {
 }
 
 /* ------------------ Totals ------------------ */
+function getHolidayCost(iso) {
+  const date = parseISODate(iso);
+  const dow = date.getDay(); // 0 Sun .. 6 Sat
+
+  if (publicHolidayDates.has(iso) || dow === 0 || dow === 6) {
+    return 0;
+  }
+
+  if (dow === 5) {
+    return 0.5;
+  }
+
+  if (halfDays.has(iso)) {
+    return halfDays.get(iso);
+  }
+
+  return 1;
+}
+
 function computeUsedMinutes() {
   let totalMinutes = 0;
   selectedDates.forEach(iso => {
-    const date = parseISODate(iso);
-    const dow = date.getDay(); // 0 Sun .. 6 Sat
-    if (publicHolidayDates.has(iso) || dow === 0 || dow === 6) {
-      // add 0
-    } else if(halfDays.has(iso)) {
-      const v = halfDays.get(iso);
-      if(v === 0.5) {
-        totalMinutes += 3*60; // 180
-      } else if(v === 1) {
-        totalMinutes += 7*60 + 45; // 465
-      }
-    } else if(dow >=1 && dow <=4) {
-      totalMinutes += 7*60 + 45; // 465
-    } else if(dow === 5) {
-      totalMinutes += 3*60; // 180
-    }
+    const cost = getHolidayCost(iso);
+    if (cost === 1) totalMinutes += 7*60 + 45;
+    else if (cost === 0.5) totalMinutes += 3*60;
+    // cost 0 → no minutes added
   });
   return totalMinutes;
 }

@@ -295,7 +295,13 @@ function formatDateLong(d) {
 }
 
 function rebuildTooltips() {
-  [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
+  [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => {
+    if (bootstrap.Tooltip.getInstance(el)) {
+      bootstrap.Tooltip.getInstance(el).dispose();
+    }
+
+    new bootstrap.Tooltip(el);
+  });
 }
 
 /* ------------------ Fetch bank holidays ------------------ */

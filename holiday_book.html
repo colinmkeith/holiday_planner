@@ -27,6 +27,12 @@
     .day-cell.historical:hover { cursor:not-allowed; }
     #selected-dates { overflow:auto; padding-left: 1rem; }
 
+    #selected-dates .date { display: inline-block; width: 17ch; }
+    #selected-dates .cost { display: inline-block; width: 7ch; }
+    #selected-dates .holiday, #selected-dates .weekend { display:inline-block; padding: 2px; }
+
+    .delete { cursor: pointer; }
+
     @media (min-width: 1000px) {
       .col-lg-3 > .card {
         position: fixed;
@@ -124,7 +130,7 @@
               <h6 class="card-title mb-0">Selected Dates</h6>
               <button id="clearBtn" class="btn btn-sm btn-danger">Clear</button>
             </div>
-            <ul id="selected-dates" class="list-group mb-0">
+            <ul id="selected-dates" class="list-group mb-0" aria-live="polite">
               <li class="list-group-item">None</li>
             </ul>
 

@@ -379,10 +379,13 @@ function makeMonthCalendar(year, monthIndex) {
     cell.dataset.date = iso;
     cell.setAttribute('role', 'gridcell');
 
+    arialabel = parseISODate(iso).toString().split(' 00')[0];
+
     // If historicalToggle not checked then don't treat as historical
     const historical = historyToggle.checked ? date < now : false;
     if (historical) {
-      cell.classList.add('historical')
+      cell.classList.add('historical');
+      arialabel += ' historical date so not selectable.';
     }
 
     const isosplit = iso.split('-');
@@ -391,16 +394,21 @@ function makeMonthCalendar(year, monthIndex) {
         parseInt(isosplit[2], 10) === now.getDate() ) {
       cell.classList.add('today');
       today = cell;
+      arialabel += " Today's date.";
+      cell.setAttribute('aria-current', 'date');
     }
 
     const dow = date.getDay();
-    if (dow === 0 || dow === 6)
+    if (dow === 0 || dow === 6) {
       cell.classList.add('weekend');
+      arialabel += " Is a weekend day.";
+    }
 
     if (publicHolidayDates.has(iso)) {
       cell.classList.add('holiday');
       cell.setAttribute('data-bs-toggle', 'tooltip');
       cell.setAttribute('title', (historical ? 'Was ' : '') + publicHolidayDates.get(iso));
+      arialabel += ' Is a public holiday ('+ publicHolidayDates.get(iso) + ')';
     }
 
     const num = document.createElement('div');
@@ -529,22 +537,14 @@ function refreshSelectionsUI() {
 
     const spannone = document.createElement('span');
     spannone.textContent = 'None'
-
-    const spantext = document.createElement('span');
-    spantext.className = 'small-muted';
-    spantext.textContent = 'Format: <date> (# days) (Holiday name)';
-
     li.appendChild(spannone);
-    li.appendChild(document.createElement('br'));
-    li.appendChild(document.createElement('br'));
-    li.appendChild(spantext);
 
     selectedDatesUL.appendChild(li);
     return;
   }
 
   i = false;
-  [...selectedDates].sort().forEach(iso => {
+  [...selectedDates].sort().forEach(iSo => {
     const d = parseISODate(iso);
     const opts = {
       weekday: 'short',
@@ -581,10 +581,17 @@ function refreshSelectionsUI() {
       li.classList.add('list-group-item-secondary');
     }
     i = !i;
+
+    const trashicon = document.createElement('i');
+    trashicon.className = 'bi bi-trash';
+    trashicon.setAttribute('data-bs-toggle', 'tooltip');
+    trashicon.setAttribute('title', 'Delete date');
+
     const spantrash = document.createElement('span');
-    spantrash.className = 'me-2 text-danger';
-    spantrash.innerHTML = '<i class="bi bi-trash"></i>';
-    spantrash.style.cursor = 'pointer';
+    spantrash.className = 'me-2 text-danger delete';
+    spantrash.appendChild(trashicon);
+    spantrash.setAttribute('aria-label', `Remove ${formatted}`);
+
     spantrash.onclick = () => {
       selectedDates.delete(iso);
       refreshSelectionsUI();
@@ -592,23 +599,25 @@ function refreshSelectionsUI() {
     };
 
     const spandate = document.createElement('span');
-    spandate.className = 'me-2';
+    spandate.className = 'me-1 date';
     spandate.textContent = formatted;
 
     if (publicHolidayDates.get(iso)) {
-      cost = '0';
+      cost = '0 days';
     } else if (weekday === "Sat" || weekday === "Sun") {
-      cost = '0';
+      cost = '0 days';
     } else if (weekday === "Fri") {
-      cost = '½';
+      cost = '½ day';
     } else {
       cost = halfDays.get(iso) || '1';
-      if(cost === 0.5) cost = '½';
+      if(cost === 0.5)
+        cost = '½';
+      cost += ' day';
     }
 
     const spancost = document.createElement('span');
-    spancost.className = 'me-2';
-    spancost.textContent = ` (${cost})`;
+    spancost.className = 'me-1 cost';
+    spancost.textContent = `(${cost})`;
 
     li.appendChild(spantrash);
     li.appendChild(spandate);

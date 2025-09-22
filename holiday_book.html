@@ -265,6 +265,27 @@ function hhmmToMinutes(hhmm) {
   return h*60 + m;
 }
 
+function formatDateLong(d) {
+  // Example output: "Tue, 23rd Sep 2025"
+  const weekday = d.toLocaleDateString(undefined, { weekday: 'short' });
+  const day = d.getDate();
+  const month = d.toLocaleString(undefined, { month: 'short' });
+  const year = d.getFullYear();
+
+  // Ordinal suffix
+  const suffix = (n) => {
+    if (n >= 11 && n <= 13) return 'th';
+    switch (n % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+
+  return `${weekday}, ${day}${suffix(day)} ${month} ${year}`;
+}
+
 function rebuildTooltips() {
   [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el => new bootstrap.Tooltip(el));
 }
@@ -550,35 +571,7 @@ function refreshSelectionsUI() {
   i = false;
   [...selectedDates].sort().forEach(iSo => {
     const d = parseISODate(iso);
-    const opts = {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    };
-    let parts = d.toLocaleDateString(undefined, opts).split(' ');
-    // Extract pieces: e.g. "Wed, 7 Sep 2025"
-    const weekday = parts[0].replace(',', '');
-    const day = d.getDate();
-    const month = d.toLocaleString(undefined, {
-      month: 'short'
-    });
-    const year = d.getFullYear();
-    // Add ordinal suffix
-    const suffix = (n) => {
-      if (n >= 11 && n <= 13) return 'th';
-      switch (n % 10) {
-      case 1:
-        return 'st';
-      case 2:
-        return 'nd';
-      case 3:
-        return 'rd';
-      default:
-        return 'th';
-      }
-    };
-    const formatted = `${weekday}, ${day}${suffix(day)} ${month} ${year}`;
+    const formatted = formatDateLong(d);
     const li = document.createElement('li');
     li.className = 'list-group-item';
     if (i === true) {

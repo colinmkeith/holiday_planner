@@ -209,11 +209,12 @@ let defaultLocation = 'england-and-wales';
 let lastClickedDate = null;
 
 function setTheme() {
-  document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+  const theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
   // initial theme: use saved preference if available, else system preference
   let savedTheme = localStorage.getItem('holidayPlannerTheme');
   if (savedTheme !== 'light' && savedTheme !== 'dark') {
-    savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    savedTheme = theme;
   }
   let currentTheme = savedTheme;
   document.documentElement.setAttribute('data-bs-theme', currentTheme);

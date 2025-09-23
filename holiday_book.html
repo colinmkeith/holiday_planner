@@ -46,6 +46,7 @@
 
     /* Colours */
     .holiday { outline: 2px dashed #dc3545; }
+    .otherdate { outline: 2px dashed #0dbb4e; }
 
     html[data-bs-theme="light"] body { background: #f8f9fa; }
     html[data-bs-theme="light"] .calendar-month { border: 1px solid #dee2e6; background: #fff; }
@@ -470,6 +471,7 @@ function handleDateClick(isoDate, ev) {
     let cur = new Date(lastDate);
     while(cur <= clickDate){
       const iso = formatDateISO(cur);
+      halfDays.delete(iso);
       if(actionSelect) selectedDates.add(iso);
       else selectedDates.delete(iso);
       cur.setDate(cur.getDate() + 1);

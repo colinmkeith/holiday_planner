@@ -173,7 +173,7 @@ let publicHolidayDates = new Map(); // ISO -> holiday name
 let selectedDates = new Set();
 let halfDays = new Map();
 let defaultLocation = 'england-and-wales';
-let lastClickedDate = null;
+let lastNormalClickedDate = null;
 
 function setTheme() {
   const theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -460,8 +460,8 @@ function handleDateClick(isoDate, ev) {
   const shiftKey = ev.shiftKey;
   let clickDate = parseISODate(isoDate);
 
-  if(shiftKey && !ctrlKey && lastClickedDate) {
-    let lastDate = parseISODate(lastClickedDate);
+  if(shiftKey && !ctrlKey && lastNormalClickedDate) {
+    let lastDate = parseISODate(lastNormalClickedDate);
     if(lastDate > clickDate) {
       [lastDate, clickDate] = [clickDate, lastDate];
     }
@@ -509,7 +509,7 @@ function handleDateClick(isoDate, ev) {
       selectedDates.add(isoDate);
     }
   }
-  lastClickedDate = isoDate;
+  lastNormalClickedDate = isoDate;
   refreshSelectionsUI();
   updateTotals();
 }

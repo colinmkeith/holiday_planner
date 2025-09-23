@@ -57,8 +57,8 @@
     html[data-bs-theme="dark"] .weekend { background: rgba(13,50,120,0.5); }
     html[data-bs-theme="dark"] .weekday-headers { color:#6c757d; }
 
-    .day-cell.selected:not(.halfday) { background: #0d6efd !important; color: white; }
-    .day-cell.selected.halfday {
+    .day-cell.selected:not(.halfday):not(.friday) { background: #0d6efd !important; color: white; }
+    .day-cell.selected.halfday, .day-cell.selected.friday {
       background-image: linear-gradient(bottom, #0d6efd, #0d6efd 50%, transparent 50%, transparent 100%);
       background-image: -webkit-linear-gradient(bottom, #0d6efd, #0d6efd 50%, transparent 50%, transparent 100%);
     }
@@ -462,43 +462,22 @@ function handleDateClick(isoDate, ev) {
   const isCurrentlySelected = selectedDates.has(isoDate);
   let clickDate = parseISODate(isoDate);
 
-  selectLogic(isoDate, isCurrentlySelected, ctrlKey);
-
-
-/*
   if(shiftKey && lastNormalClickedDate) {
     let lastDate = parseISODate(lastNormalClickedDate);
     if(lastDate > clickDate) {
       [lastDate, clickDate] = [clickDate, lastDate];
     }
 
-    let cur = new Date(lastDate);
-    while(cur <= clickDate){
-      const iso = formatDateISO(cur);
-      const dow = cur.getDay(); // 0 Sun .. 6 Sat (Fri === 5)
+    let curDate = new Date(lastDate);
 
-      if (isSelected) {
-        selectedDates.delete(iso);
-      } else {
-        selectedDates.add(iso);
-      }
-
-      // Halfdays only for Mon - Thur
-      if(ctrlKey && (dow >= 1 || dow <= 4)) {
-        if(halfOrFull === 0.5) {
-          halfDays.set(isoDate, 1);
-        } else if(halfOrFull === 1) {
-          halfDays.delete(isoDate);
-        } else {
-          halfDays.set(isoDate, 0.5);
-        }
-      }
-
-      cur.setDate(cur.getDate() + 1);
+    while(curDate <= clickDate){
+      const isoDate = formatDateISO(curDate);
+      selectLogic(isoDate, isCurrentlySelected, ctrlKey);
+      curDate.setDate(curDate.getDate() + 1);
     }
   } else {
-    const halfOrFull = halfDays.get(isoDate);
-*/
+    selectLogic(isoDate, isCurrentlySelected, ctrlKey);
+  }
 
   lastNormalClickedDate = isoDate;
   refreshSelectionsUI();
@@ -533,40 +512,15 @@ function selectLogic(isoDate, isCurrentlySelected, ctrlKey) {
     }
     selectedDates.add(isoDate);
   }
-
-/*
-  if(ctrlKey) {
-    // Everything is halfday or not
-
-    if(!ctrlKey && isSelected) {
-      selectedDates.delete(isoDate);
-    } else {
-      // Halfdays only for Mon - Thur
-      if(ctrlKey && (dow >= 1 || dow <= 4)) {
-        if(halfOrFull === 0.5) {
-          halfDays.set(isoDate, 1);
-          selectedDates.add(isoDate);
-        } else if(halfOrFull === 1) {
-          halfDays.delete(isoDate);
-          selectedDates.delete(isoDate);
-        } else {
-          halfDays.set(isoDate, 0.5);
-          selectedDates.add(isoDate);
-        }
-      } else {
-        selectedDates.add(isoDate);
-      }
-    }
-
-  }
-  */
 }
 
 /* ------------------ UI refresh ------------------ */
 function refreshSelectionsUI() {
   document.querySelectorAll('.day-cell').forEach(cell => {
     const iso = cell.dataset.date;
+
     if (!iso) return;
+    const dow = parseISODate(iso).getDay(); // 0 Sun .. 6 Sat (Fri === 5)
     if (selectedDates.has(iso)) {
       cell.classList.add('selected');
     } else {
@@ -583,6 +537,13 @@ function refreshSelectionsUI() {
       cell.classList.add('halfday');
     } else {
       cell.classList.remove('halfday');
+    }
+
+    // Friday
+    if (dow === 5) {
+      cell.classList.add('friday');
+    } else {
+      cell.classList.remove('friday');
     }
   });
   selectedDatesUL.innerHTML = '';

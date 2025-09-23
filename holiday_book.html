@@ -172,7 +172,7 @@ const GOV_BANK_HOLIDAYS_URL = 'https://www.gov.uk/bank-holidays.json';
 let publicHolidaysRawData = new Map();
 let publicHolidayDates = new Map(); // ISO -> holiday name
 let selectedDates = new Set();
-let halfDays = new Map();
+let halfDays = new Set();
 let defaultLocation = 'england-and-wales';
 let lastNormalClickedDate = null;
 
@@ -459,64 +459,107 @@ function renderCalendars(year) {
 function handleDateClick(isoDate, ev) {
   const ctrlKey = ev.ctrlKey;
   const shiftKey = ev.shiftKey;
+  const isCurrentlySelected = selectedDates.has(isoDate);
   let clickDate = parseISODate(isoDate);
 
-  if(shiftKey && !ctrlKey && lastNormalClickedDate) {
+  selectLogic(isoDate, isCurrentlySelected, ctrlKey);
+
+
+/*
+  if(shiftKey && lastNormalClickedDate) {
     let lastDate = parseISODate(lastNormalClickedDate);
     if(lastDate > clickDate) {
       [lastDate, clickDate] = [clickDate, lastDate];
     }
-    const isSelected = selectedDates.has(isoDate);
+
     let cur = new Date(lastDate);
     while(cur <= clickDate){
       const iso = formatDateISO(cur);
-      const halfOrFull = halfDays.get(isoDate);
       const dow = cur.getDay(); // 0 Sun .. 6 Sat (Fri === 5)
+
       if (isSelected) {
         selectedDates.delete(iso);
       } else {
         selectedDates.add(iso);
       }
+
+      // Halfdays only for Mon - Thur
+      if(ctrlKey && (dow >= 1 || dow <= 4)) {
+        if(halfOrFull === 0.5) {
+          halfDays.set(isoDate, 1);
+        } else if(halfOrFull === 1) {
+          halfDays.delete(isoDate);
+        } else {
+          halfDays.set(isoDate, 0.5);
+        }
+      }
+
       cur.setDate(cur.getDate() + 1);
     }
-  } else if (ctrlKey) {
-    const halfOrFull = halfDays.get(isoDate);
-    const dow = clickDate.getDay(); // 0 Sun .. 6 Sat (Fri === 5)
-    const isSelected = selectedDates.has(isoDate);
-
-    // Don't add Fridays to halfDay (Sat, Sun already excluded)
-    if (dow === 5) {
-      // Toggle on/off as normal.
-      if(isSelected) {
-        selectedDates.delete(isoDate);
-      } else {
-        selectedDates.add(isoDate);
-      }
-    } else {
-      if(halfOrFull === 0.5) {
-        halfDays.set(isoDate, 1);
-        selectedDates.add(isoDate);
-      }
-      else if(halfOrFull === 1) {
-        halfDays.delete(isoDate);
-        selectedDates.delete(isoDate);
-      }
-      else {
-        halfDays.set(isoDate, 0.5);
-        selectedDates.add(isoDate);
-      }
-    }
-
   } else {
-    if(selectedDates.has(isoDate)) {
-      selectedDates.delete(isoDate);
-    } else {
-      selectedDates.add(isoDate);
-    }
-  }
+    const halfOrFull = halfDays.get(isoDate);
+*/
+
   lastNormalClickedDate = isoDate;
   refreshSelectionsUI();
   updateTotals();
+}
+
+function selectLogic(isoDate, isCurrentlySelected, ctrlKey) {
+  const clickDate = parseISODate(isoDate);
+  const dow = clickDate.getDay(); // 0 Sun .. 6 Sat (Fri === 5)
+  const isCurrentlyHalfDay = halfDays.has(isoDate);
+
+  // If currently selected, unselect.
+  if(isCurrentlySelected) {
+    // If Ctrl pressed and not a half day, select as half day, else unselect
+    if (ctrlKey) {
+      if(isCurrentlyHalfDay) {
+        halfDays.delete(isoDate);
+      } else {
+        halfDays.add(isoDate);
+      }
+      selectedDates.add(isoDate);
+    } else {
+      selectedDates.delete(isoDate);
+      halfDays.delete(isoDate);
+    }
+  }
+  // Else select, unless ctrl is pressed in which case select as half day
+  else {
+    // If Ctrl pressed and not a half day, select as half day
+    if (ctrlKey && !isCurrentlyHalfDay) {
+      halfDays.add(isoDate);
+    }
+    selectedDates.add(isoDate);
+  }
+
+/*
+  if(ctrlKey) {
+    // Everything is halfday or not
+
+    if(!ctrlKey && isSelected) {
+      selectedDates.delete(isoDate);
+    } else {
+      // Halfdays only for Mon - Thur
+      if(ctrlKey && (dow >= 1 || dow <= 4)) {
+        if(halfOrFull === 0.5) {
+          halfDays.set(isoDate, 1);
+          selectedDates.add(isoDate);
+        } else if(halfOrFull === 1) {
+          halfDays.delete(isoDate);
+          selectedDates.delete(isoDate);
+        } else {
+          halfDays.set(isoDate, 0.5);
+          selectedDates.add(isoDate);
+        }
+      } else {
+        selectedDates.add(isoDate);
+      }
+    }
+
+  }
+  */
 }
 
 /* ------------------ UI refresh ------------------ */
@@ -536,7 +579,7 @@ function refreshSelectionsUI() {
       cell.classList.remove('holiday');
     }
 
-    if (halfDays.get(iso) === 0.5) {
+    if (halfDays.has(iso)) {
       cell.classList.add('halfday');
     } else {
       cell.classList.remove('halfday');
@@ -641,7 +684,7 @@ function getHolidayCost(iso) {
   }
 
   if (halfDays.has(iso)) {
-    return halfDays.get(iso);
+    return 0.5;
   }
 
   return 1;

@@ -466,14 +466,17 @@ function handleDateClick(isoDate, ev) {
     if(lastDate > clickDate) {
       [lastDate, clickDate] = [clickDate, lastDate];
     }
-    const clickedSelected = selectedDates.has(isoDate);
-    const actionSelect = !clickedSelected;
+    const isSelected = selectedDates.has(isoDate);
     let cur = new Date(lastDate);
     while(cur <= clickDate){
       const iso = formatDateISO(cur);
-      halfDays.delete(iso);
-      if(actionSelect) selectedDates.add(iso);
-      else selectedDates.delete(iso);
+      const halfOrFull = halfDays.get(isoDate);
+      const dow = cur.getDay(); // 0 Sun .. 6 Sat (Fri === 5)
+      if (isSelected) {
+        selectedDates.delete(iso);
+      } else {
+        selectedDates.add(iso);
+      }
       cur.setDate(cur.getDate() + 1);
     }
   } else if (ctrlKey) {
@@ -484,7 +487,7 @@ function handleDateClick(isoDate, ev) {
     // Don't add Fridays to halfDay (Sat, Sun already excluded)
     if (dow === 5) {
       // Toggle on/off as normal.
-      if(selectedDates.has(isoDate)) {
+      if(isSelected) {
         selectedDates.delete(isoDate);
       } else {
         selectedDates.add(isoDate);

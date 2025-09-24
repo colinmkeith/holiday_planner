@@ -826,12 +826,22 @@ function processOtherHolidayDates() {
                .replace(/^\s+/, '');
     if (!line) return;
 
-    [undef, date, label] = line.match(/^([0-9]{4}-[0-9]{2}-[0-9]{2}),(.*)$/);
-    if(date && label) {
-      label = label.replace(/^"(.+)"$/, '$1') /* CSV */
-                   .replace(/^\s+/, '')
-                   .replace(/\s+$/, '');
-      otherHolidayDates.set(date, label);
+    const res = line.match(/^([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}),(.*)$/);
+    if(typeof(res) === 'object' && res[1] && res[2]) {
+      let [undef, date, line] = res;
+
+      const [yy, mm, dd] = date.split('-');
+      date = `${yy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+      const d = new Date();
+
+      // Silently ignore years in the past because can't put that on a calendar
+      if (yy < d.getFullYear())
+        return;
+
+      const label = res[2].replace(/^"(.+)"$/, '$1') /* CSV */
+                          .replace(/^\s+/, '')
+                          .replace(/\s+$/, '');
+      otherHolidayDates.set(res[1], label);
     }
   });
 }

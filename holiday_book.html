@@ -217,13 +217,7 @@ function setTheme() {
   document.documentElement.setAttribute('data-bs-theme', currentTheme);
 
   // theme toggle control
-  const themeToggle = document.getElementById('themeToggle');
   themeToggle.checked = (currentTheme === 'dark');
-  themeToggle.addEventListener('change', () => {
-    currentTheme = themeToggle.checked ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-bs-theme', currentTheme);
-    localStorage.setItem('holidayPlannerTheme', currentTheme);
-  });
 }
 
 /* ------------------ Utilities ------------------ */
@@ -346,6 +340,7 @@ const remainingEl = document.getElementById('remainingHoliday');
 const selectedDatesUL = document.getElementById('selected-dates');
 const exportBtn = document.getElementById('exportIcsBtn');
 const historyToggle = document.getElementById('historyToggle');
+const themeToggle = document.getElementById('themeToggle');
 const otherTab = document.getElementById('nav-other-dates-tab');
 
 /* ------------------ Calendar rendering ------------------ */
@@ -806,6 +801,12 @@ function attachControls() {
 
   historyToggle.addEventListener('change', () => {
     changeInInputs();
+  });
+
+  themeToggle.addEventListener('change', () => {
+    currentTheme = themeToggle.checked ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-bs-theme', currentTheme);
+    localStorage.setItem('holidayPlannerTheme', currentTheme);
   });
 }
 

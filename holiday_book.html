@@ -25,10 +25,11 @@
     .day-cell:hover { cursor:pointer }
     .day-cell.disabled:hover { opacity: 0.45; cursor: default; }
     .day-cell.historical:hover { cursor:not-allowed; }
+    .day-cell.selected.weekend { opacity: 0.5; }
 
     #selected-dates .date { display: inline-block; width: 17ch; }
     #selected-dates .cost { display: inline-block; width: 7ch; }
-    #selected-dates .holiday, #selected-dates .weekend { display:inline-block; padding: 2px; }
+    #selected-dates .holiday, #selected-dates .weekend, #selected-dates .otherday { display:inline-block; padding: 2px; }
 
     .delete { cursor: pointer; }
 
@@ -43,25 +44,33 @@
       }
     }
 
+    #nav-tab-dates { margin-bottom: -1px }
+    .tab-pane { padding: 5px; }
+    .tab-pane.border { border-top: 0; }
+
     /* Colours */
     .weekday-headers { color:#6c757d; }
-    .holiday { outline: 2px dashed #dc3545; }
+    .holiday:not(.otherday) { outline: 2px dashed #dc3545; }
+    .otherday:not(.holiday) { outline: 2px dashed #6dbb4e; }
+    .holiday.otherday { outline: 2px dashed #FFBF00; }
 
     html[data-bs-theme="light"] body { background: #f8f9fa; }
     html[data-bs-theme="light"] .calendar-month { border: 1px solid #dee2e6; background: #fff; }
     html[data-bs-theme="light"] .small-muted { color:#6c757d; }
     html[data-bs-theme="light"] .weekend { background: rgba(13,110,253,0.06); }
+    html[data-bs-theme="light"] #selected-dates .weekend { outline: 2px dashed rgba(13,110,253,0.06); }
 
     html[data-bs-theme="dark"] .weekend { background: rgba(13,50,120,0.5); }
+    html[data-bs-theme="dark"] #selected-dates .weekend { outline: 2px dashed rgba(13,50,120,0.5); }
 
-    .day-cell.selected.weekend { opacity: 0.5; }
-    .day-cell.selected:not(.halfday):not(.friday):not(.holiday) { background: repeating-linear-gradient(45deg, #606dbc, #606dbc 4px, #465298 4px, #465298 8px); }
+    .day-cell.selected:not(.halfday):not(.friday):not(.holiday):not(.otherday) { background: repeating-linear-gradient(45deg, #606dbc, #606dbc 4px, #465298 4px, #465298 8px); }
 
-    .day-cell.selected.halfday:not(.holiday), .day-cell.selected.friday:not(.holiday) {
+    .day-cell.selected.halfday:not(.holiday):not(.otherday), .day-cell.selected.friday:not(.holiday):not(.otherday) {
       background: repeating-linear-gradient(45deg, #606dbc, #606dbc 25%, #465298 50%);
     }
 
     .day-cell.selected.holiday { background: repeating-linear-gradient(45deg, #dc3545, #dc3545 4px, #ac0515 4px, #ac0515 8px); }
+    .day-cell.selected.otherday { background: repeating-linear-gradient(45deg, #6dbb4e, #6dbb4e 4px, #2d7b1e 4px, #2d7b1e 8px); }
   </style>
 </head>
 <body>
@@ -104,13 +113,31 @@
 
             <hr>
 
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 class="card-title mb-0">Selected Dates</h6>
-              <button id="clearBtn" class="btn btn-sm btn-danger" aria-label="Clear selected dates">Clear</button>
+            <nav>
+              <div class="nav nav-tabs" id="nav-tab-dates" role="tablist">
+                <button class="nav-link active" id="nav-select-dates-tab" data-bs-toggle="tab" data-bs-target="#nav-select-dates" type="button" role="tab" aria-controls="nav-select-dates" aria-selected="true">Selected Dates</button>
+                <button class="nav-link" id="nav-other-dates-tab" data-bs-toggle="tab" data-bs-target="#nav-other-dates" type="button" role="tab" aria-controls="nav-other-dates" aria-selected="false">Other Dates</button>
+              </div>
+            </nav>
+
+            <div class="tab-content" id="nav-tabContent">
+              <div class="tab-pane fade show active border" id="nav-select-dates" role="tabpanel" aria-labelledby="nav-select-dates-tab" tabindex="0">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="card-title mb-0">Your selected dates</h6>
+                  <button id="clearBtn" class="btn btn-sm btn-danger" aria-label="Clear selected dates">Clear</button>
+                </div>
+
+                <ul id="selected-dates" class="list-group mb-0" aria-live="polite">
+                  <li class="list-group-item" role="listitem">None</li>
+                </ul>
+              </div>
+              <div class="tab-pane fade border" id="nav-other-dates" role="tabpanel" aria-labelledby="nav-other-dates-tab" tabindex="1">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="card-title mb-0">Your other dates</h6>
+                  <!-- <button id="clearBtn" class="btn btn-sm btn-danger" aria-label="Clear selected dates">Clear</button> -->
+                </div>
+              </div>
             </div>
-            <ul id="selected-dates" class="list-group mb-0" aria-live="polite">
-              <li class="list-group-item" role="listitem">None</li>
-            </ul>
 
             <hr>
             <button id="exportIcsBtn" class="btn btn-sm btn-primary mb-3">Export ICS</button>
@@ -171,6 +198,7 @@
 const GOV_BANK_HOLIDAYS_URL = 'https://www.gov.uk/bank-holidays.json';
 let publicHolidaysRawData = new Map();
 let publicHolidayDates = new Map(); // ISO -> holiday name
+let otherHolidayDates = new Map(); // ISO -> holiday name
 let selectedDates = new Set();
 let halfDays = new Set();
 let defaultLocation = 'england-and-wales';
@@ -317,6 +345,7 @@ const remainingEl = document.getElementById('remainingHoliday');
 const selectedDatesUL = document.getElementById('selected-dates');
 const exportBtn = document.getElementById('exportIcsBtn');
 const historyToggle = document.getElementById('historyToggle');
+const otherTab = document.getElementById('nav-other-dates-tab');
 
 /* ------------------ Calendar rendering ------------------ */
 function buildYearOptions() {
@@ -419,6 +448,15 @@ function makeMonthCalendar(year, monthIndex) {
       cell.setAttribute('title', (historical ? 'Was ' : '') + publicHolidayDates.get(iso));
       arialabel += ' Is a public holiday ('+ publicHolidayDates.get(iso) + ')';
     }
+
+    if (otherHolidayDates.has(iso)) {
+      cell.classList.add('otherday');
+      cell.setAttribute('data-bs-toggle', 'tooltip');
+      const title = cell.getAttribute('title') || '';
+      cell.setAttribute('title', (title ? title + '. ' : '') + (historical ? 'Was ' : '') + otherHolidayDates.get(iso));
+      arialabel += ' Is a personal date ('+ otherHolidayDates.get(iso) + ')';
+    }
+    cell.setAttribute('arialabel', arialabel);
 
     const num = document.createElement('div');
     num.className = 'date-num';
@@ -533,6 +571,12 @@ function refreshSelectionsUI() {
       cell.classList.remove('holiday');
     }
 
+    if (otherHolidayDates.has(iso)) {
+      cell.classList.add('otherday');
+    } else {
+      cell.classList.remove('otherday');
+    }
+
     if (halfDays.has(iso)) {
       cell.classList.add('halfday');
     } else {
@@ -614,18 +658,30 @@ function refreshSelectionsUI() {
     li.appendChild(spandate);
     li.appendChild(spancost);
 
-    if (publicHolidayDates.has(iso)) {
-      const spanholiday = document.createElement('span');
-      spanholiday.className = 'holiday';
-      spanholiday.textContent = publicHolidayDates.get(iso);
-      li.appendChild(spanholiday);
+    let text = publicHolidayDates.get(iso);
+    if (otherHolidayDates.has(iso)) {
+      text = (text ? text +', ' : '') + otherHolidayDates.get(iso);
+    }
+
+    const spanlabel = document.createElement('span');
+    if (text) {
+
+      if (publicHolidayDates.has(iso))
+        spanlabel.classList.add('holiday');
+
+      if (otherHolidayDates.has(iso))
+        spanlabel.classList.add('otherday');
+
+      spanlabel.textContent = text;
     }
     else if (weekday === "Sat" || weekday === "Sun") {
-      const spanholiday = document.createElement('span');
-      spanholiday.className = 'weekend';
-      spanholiday.textContent = 'Weekend';
-      li.appendChild(spanholiday);
+      spanlabel.classList.add('weekend');
+      spanlabel.textContent = 'Weekend';
     }
+
+    if (spanlabel.textContent !== '')
+      li.appendChild(spanlabel);
+
     selectedDatesUL.appendChild(li);
   });
   rebuildTooltips();
@@ -699,7 +755,10 @@ function exportICS() {
     lines.push('DTSTART;VALUE=DATE:' + iso.replace(/-/g,''));
     lines.push('DTEND;VALUE=DATE:' + formatDateISO(next).replace(/-/g,''));
     // include holiday name if present
-    const summary = publicHolidayDates.has(iso) ? publicHolidayDates.get(iso) : 'Holiday';
+    let summary = publicHolidayDates.has(iso) ? publicHolidayDates.get(iso) : 'Holiday';
+    let otherholidayreason = otherHolidayDates.get(iso);
+    if (otherholidayreason)
+      summary += ' and your event ' + otherholidayreason;
     lines.push('SUMMARY:' + summary);
     lines.push('END:VEVENT');
   });

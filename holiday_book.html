@@ -895,9 +895,7 @@ function processOtherHolidayDates() {
   const curYear = new Date().getFullYear();
 
   [...othersEl.value.split('\n')].forEach(line => {
-    line = line.replace(/#.*$/, '')
-               .replace(/\s+$/, '')
-               .replace(/^\s+/, '');
+    line = line.replace(/#.*$/, '').trim();
     if (!line) return;
 
 /***

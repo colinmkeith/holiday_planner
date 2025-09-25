@@ -849,39 +849,44 @@ function attachControls() {
 }
 
 function processOtherHolidayDates() {
+  prebookedDates.clear();
   [...othersEl.value.split('\n')].forEach(line => {
     line = line.replace(/#.*$/, '')
                .replace(/\s+$/, '')
                .replace(/^\s+/, '');
     if (!line) return;
 
-    const res = line.match(/^([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}),(.*)$/);
+/*
+    const res = line.match(/^"?([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})(?:-([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}))"?,(.*)$/);
+*/
+    const res = line.match(/^"?([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})"?,(.*)$/);
 
     if (res === null)
       return;
 
-    if (typeof(res) === 'object' && res[1] && res[2]) {
-      if (res[2] = res[2].replace(/,(?:1|booked)$/, '')) {
-        res[3] = 1;
-      }
-      let [undef, date, line, prebooked] = res;
+    if (typeof(res) !== 'object' || !res[1])
+      return;
 
-      const [yy, mm, dd] = date.split('-');
-      date = `${yy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
-      const d = new Date();
+    if (res[2] = res[2].replace(/,(?:1|booked)$/, '')) {
+      res[3] = 1;
+    }
+    let [undef, date, label, prebooked] = res;
 
-      // Silently ignore years in the past because can't put that on a calendar
-      if (yy < d.getFullYear())
-        return;
+    const [yy, mm, dd] = date.split('-');
+    date = `${yy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    const d = new Date();
 
-      const label = res[2].replace(/^"(.+)"$/, '$1') /* CSV */
-                          .replace(/^\s+/, '')
-                          .replace(/\s+$/, '');
-      otherHolidayDates.set(date, label);
+    // Silently ignore years in the past because can't put that on a calendar
+    if (yy < d.getFullYear())
+      return;
 
-      if (prebooked) {
-        prebookedDates.add(date);
-      }
+    label = label.replace(/^"(.+)"$/, '$1') /* CSV */
+                 .replace(/^\s+/, '')
+                 .replace(/\s+$/, '');
+    otherHolidayDates.set(date, label);
+
+    if (prebooked) {
+      prebookedDates.add(date);
     }
   });
 }

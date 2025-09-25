@@ -423,14 +423,10 @@ function makeMonthCalendar(year, monthIndex) {
     cell.dataset.date = iso;
     cell.setAttribute('role', 'gridcell');
 
-    arialabel = parseISODate(iso).toString().split(' 00')[0];
-    const historical = historyToggle.checked ? date < now : false;
-
     const num = document.createElement('div');
     num.className = 'date-num';
     num.textContent = d;
     cell.appendChild(num);
-
     cell.addEventListener('click', (ev) => {
       ev.preventDefault();
       handleDateClick(iso, ev);

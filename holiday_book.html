@@ -541,9 +541,9 @@ function refreshSelectionsUI() {
     }
 
     if (prebookedDates.has(iso)) {
-      cell.classList.add('prebooked');
+      cell.classList.add('selected');
     } else {
-      cell.classList.remove('prebooked');
+      cell.classList.remove('selected');
     }
 
     // If historicalToggle not checked then don't treat as historical

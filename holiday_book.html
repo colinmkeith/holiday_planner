@@ -412,8 +412,12 @@ function makeMonthCalendar(year, monthIndex) {
   const daysInMonth = new Date(year, monthIndex+1, 0).getDate();
   for(let d=1; d<=daysInMonth; d++){
     const date = new Date(year, monthIndex, d);
-    const iso = formatDateISO(date);
+    const yyyy = year;
+    const mm   = new String(monthIndex+1).padStart(2, '0');
+    const dd   = new String(d).padStart(2, '0');
+    const iso = `${yyyy}-${mm}-${dd}`;
     const cell = document.createElement('div');
+
     cell.className = 'day-cell';
     cell.dataset.date = iso;
     cell.setAttribute('role', 'gridcell');

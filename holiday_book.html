@@ -14,17 +14,17 @@
     .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
     .day-cell { padding: 6px; min-height: 40px; display:flex; align-items:flex-start; justify-content:center; cursor: pointer; border-radius:6px; user-select: none; }
     .day-cell.disabled { opacity: 0.45; }
-    .day-cell.historical{ opacity: 0.2; }
+    .day-cell.historical, .day-cell.today { opacity: 0.2; }
     .day-cell .date-num { font-weight: 500; }
     .weekday-headers { display:grid; grid-template-columns: repeat(7, 1fr); font-size: 0.85rem; text-align:center; margin-bottom:4px; }
     .small-muted { font-size: .9rem; }
-    .day-cell:not(.disabled):hover {
+    .day-cell:not(.disabled):not(.today):hover {
       background-color: rgba(13,110,253,0.15);
       transition: background-color 0.2s ease-in-out;
     }
     .day-cell:hover { cursor:pointer }
     .day-cell.disabled:hover { opacity: 0.45; cursor: default; }
-    .day-cell.historical:hover { cursor:not-allowed; }
+    .day-cell.historical:hover, .day-cell.today:hover { cursor:not-allowed; }
     .day-cell.selected.weekend { opacity: 0.5; }
     .day-cell.selected.prebooked { opacity: 0.5; }
 
@@ -549,6 +549,9 @@ function refreshSelectionsUI() {
 
     if (date.getTime() == now.getTime()) {
       cell.classList.add('today');
+      cell.setAttribute('data-bs-toggle', 'tooltip');
+      const title = cell.getAttribute('title') || '';
+      cell.setAttribute('title', (title ? title + '. ' : '') + 'Today');
       arialabel += " Today's date.";
       cell.setAttribute('aria-current', 'date');
     }
@@ -561,7 +564,8 @@ function refreshSelectionsUI() {
     if (publicHolidayDates.has(iso)) {
       cell.classList.add('holiday');
       cell.setAttribute('data-bs-toggle', 'tooltip');
-      cell.setAttribute('title', (historical ? 'Was ' : '') + publicHolidayDates.get(iso));
+      const title = cell.getAttribute('title') || '';
+      cell.setAttribute('title', (title ? title + '. ' : '') + (historical ? 'Was ' : '') + publicHolidayDates.get(iso));
       arialabel += ' Is a public holiday ('+ publicHolidayDates.get(iso) + ')';
     } else {
       cell.classList.remove('holiday');

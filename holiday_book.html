@@ -705,7 +705,7 @@ function getHolidayCost(iso) {
   const date = parseISODate(iso);
   const dow = date.getDay(); // 0 Sun .. 6 Sat
 
-  if (publicHolidayDates.has(iso) || dow === 0 || dow === 6 || preBookedDates.has(iso)) {
+  if (publicHolidayDates.has(iso) || dow === 0 || dow === 6 || prebookedDates.has(iso)) {
     return 0;
   }
 

@@ -137,7 +137,7 @@
               </div>
 
               <div class="tab-pane fade border" id="nav-other-dates" role="tabpanel" aria-labelledby="nav-other-dates-tab" tabindex="1">
-                <h6 class="card-title mb-2">Your other dates. (Format YYYY-MM-DD,Label[,booked]</h6>
+                <h6 class="card-title mb-2">Your other dates. (See help for format)</h6>
                 <textarea class="form-control" id="otherdates" placeholder="Format: YYYY-MM-DD,Label[,Booked]" spellcheck=true></textarea>
               </div>
 
@@ -154,6 +154,13 @@
                     <li>Ctrl-Click to select half-days (Mon-Thu)</li>
                     <li>Ctrl-Shift-Click to select a range, select Mon-Thu as half-days</li>
                     <li>Input personal dates, e.g. birthdays, holidays in Other dates to highlight</li>
+                    <li>Other Dates format:
+                      <ul>
+                        <li>YYYY-MM-DD,Label</li>
+                        <li>StartYYYY-MM-DD,EndYYYY-MM-DD,Label[,booked]</li>
+                        <li>Can be CSV and double-quote enclosed</li>
+                      </ul>
+                    </li>
                   </ul>
                 </div>
 
@@ -850,16 +857,26 @@ function attachControls() {
 
 function processOtherHolidayDates() {
   prebookedDates.clear();
+  const curYear = new Date().getFullYear();
+
   [...othersEl.value.split('\n')].forEach(line => {
     line = line.replace(/#.*$/, '')
                .replace(/\s+$/, '')
                .replace(/^\s+/, '');
     if (!line) return;
 
-/*
-    const res = line.match(/^"?([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})(?:-([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}))"?,(.*)$/);
-*/
-    const res = line.match(/^"?([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})"?,(.*)$/);
+/***
+  **  Super cool regex to match CSV with optional columns, so:
+"2025-12-25,2025-12-31,\"NYE partytime\",1".match(/^"?([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})"?(?:,"?([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})"?)?,"?(.*?)"?(?:"?,(1|booked)"?)?$/);
+
+"2025-12-25,2025-12-31,\"NYE partytime\",1"          ===> Array(5) [ '2025-12-25,2025-12-31,"NYE partytime",1', "2025-12-25", "2025-12-31", "NYE partytime", "1" ]
+"2025-12-25,2025-12-31,\"NYE partytime\",\"booked\"" ===> Array(5) [ '2025-12-25,2025-12-31,"NYE partytime","booked"', "2025-12-25", "2025-12-31", "NYE partytime", "booked" ]
+"2025-12-25,2025-12-31,\"NYE partytime\""            ===> Array(5) [ '2025-12-25,2025-12-31,"NYE partytime"', "2025-12-25", "2025-12-31", "NYE partytime", undefined ]
+"2025-12-25,\"NYE partytime\",1"                     ===> Array(5) [ '2025-12-25,"NYE partytime",1"', "2025-12-25", undefined, "NYE partytime", "1" ]
+"2025-12-25,\"NYE partytime\""                       ===> Array(5) [ '2025-12-25,"NYE partytime"', "2025-12-25", undefined, "NYE partytime", undefined ]
+***/
+
+    const res = line.match(/^"?([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})"?(?:,"?([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})"?)?,"?(.*?)"?(?:"?,(1|booked)"?)?$/);
 
     if (res === null)
       return;
@@ -867,26 +884,25 @@ function processOtherHolidayDates() {
     if (typeof(res) !== 'object' || !res[1])
       return;
 
-    if (res[2] = res[2].replace(/,(?:1|booked)$/, '')) {
-      res[3] = 1;
-    }
-    let [undef, date, label, prebooked] = res;
+    let [undef, startdate, enddate, label, prebooked] = res;
+    if (!enddate)
+      enddate = startdate;
 
-    const [yy, mm, dd] = date.split('-');
-    date = `${yy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
-    const d = new Date();
+    enddate = new Date(enddate);
+    curdate = new Date(startdate);
 
-    // Silently ignore years in the past because can't put that on a calendar
-    if (yy < d.getFullYear())
-      return;
+    while (curdate <= enddate) {
+      // Silently ignore years in the past because they can never be displayed
+      if (curdate.getFullYear() < curYear)
+        return;
 
-    label = label.replace(/^"(.+)"$/, '$1') /* CSV */
-                 .replace(/^\s+/, '')
-                 .replace(/\s+$/, '');
-    otherHolidayDates.set(date, label);
+      const iso = formatDateISO(curdate);
+      otherHolidayDates.set(iso, label);
 
-    if (prebooked) {
-      prebookedDates.add(date);
+      if (prebooked)
+        prebookedDates.add(iso);
+
+      curdate.setTime(curdate.getTime() + 86400000);
     }
   });
 }

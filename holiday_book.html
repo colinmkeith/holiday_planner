@@ -534,10 +534,16 @@ function refreshSelectionsUI() {
 
     let arialabel = parseISODate(iso).toString().split(' 00')[0];
 
-    if (selectedDates.has(iso) || prebookedDates.has(iso)) {
+    if (selectedDates.has(iso)) {
       cell.classList.add('selected');
     } else {
       cell.classList.remove('selected');
+    }
+
+    if (prebookedDates.has(iso)) {
+      cell.classList.add('prebooked');
+    } else {
+      cell.classList.remove('prebooked');
     }
 
     // If historicalToggle not checked then don't treat as historical

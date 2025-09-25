@@ -426,15 +426,6 @@ function makeMonthCalendar(year, monthIndex) {
     arialabel = parseISODate(iso).toString().split(' 00')[0];
     const historical = historyToggle.checked ? date < now : false;
 
-    if (otherHolidayDates.has(iso)) {
-      cell.classList.add('otherday');
-      cell.setAttribute('data-bs-toggle', 'tooltip');
-      const title = cell.getAttribute('title') || '';
-      cell.setAttribute('title', (title ? title + '. ' : '') + (historical ? 'Was ' : '') + otherHolidayDates.get(iso));
-      arialabel += ' Is a personal date ('+ otherHolidayDates.get(iso) + ')';
-    }
-    cell.setAttribute('arialabel', arialabel);
-
     const num = document.createElement('div');
     num.className = 'date-num';
     num.textContent = d;
@@ -582,9 +573,15 @@ function refreshSelectionsUI() {
 
     if (otherHolidayDates.has(iso)) {
       cell.classList.add('otherday');
+      cell.setAttribute('data-bs-toggle', 'tooltip');
+      const title = cell.getAttribute('title') || '';
+      cell.setAttribute('title', (title ? title + '. ' : '') + (historical ? 'Was ' : '') + otherHolidayDates.get(iso));
+      arialabel += ' Is a personal date ('+ otherHolidayDates.get(iso) + ')';
     } else {
       cell.classList.remove('otherday');
     }
+
+    cell.setAttribute('arialabel', arialabel);
 
     if (halfDays.has(iso)) {
       cell.classList.add('halfday');

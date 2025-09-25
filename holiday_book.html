@@ -26,6 +26,7 @@
     .day-cell.disabled:hover { opacity: 0.45; cursor: default; }
     .day-cell.historical:hover { cursor:not-allowed; }
     .day-cell.selected.weekend { opacity: 0.5; }
+    .day-cell.selected.prebooked { opacity: 0.5; }
 
     #selected-dates .date { display: inline-block; width: 17ch; }
     #selected-dates .cost { display: inline-block; width: 7ch; }
@@ -135,8 +136,8 @@
               </div>
 
               <div class="tab-pane fade border" id="nav-other-dates" role="tabpanel" aria-labelledby="nav-other-dates-tab" tabindex="1">
-                <h6 class="card-title mb-2">Your other dates.</h6>
-                <textarea class="form-control" id="otherdates" placeholder="Format: YYYY-MM-DD,Reason" spellcheck=true></textarea>
+                <h6 class="card-title mb-2">Your other dates. (Format YYYY-MM-DD,Label[,booked]</h6>
+                <textarea class="form-control" id="otherdates" placeholder="Format: YYYY-MM-DD,Label[,Booked]" spellcheck=true></textarea>
               </div>
 
               <div class="tab-pane fade show border" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab" tabindex="0">
@@ -202,6 +203,7 @@ const GOV_BANK_HOLIDAYS_URL = 'https://www.gov.uk/bank-holidays.json';
 let publicHolidaysRawData = new Map();
 let publicHolidayDates = new Map(); // ISO -> holiday name
 let otherHolidayDates = new Map(); // ISO -> holiday name
+let prebookedDates = new Set();
 let selectedDates = new Set();
 let halfDays = new Set();
 let defaultLocation = 'england-and-wales';
@@ -457,6 +459,15 @@ function makeMonthCalendar(year, monthIndex) {
     }
     cell.setAttribute('arialabel', arialabel);
 
+    if (prebookedDates.has(iso)) {
+      cell.setAttribute('data-bs-toggle', 'tooltip');
+      const title = cell.getAttribute('title') || '';
+      cell.setAttribute('title', (title ? title + '. ' : '') + ' Already booked');
+      arialabel += ' Already booked.'
+      cell.classList.add('selected');
+      cell.classList.add('prebooked');
+    }
+
     const num = document.createElement('div');
     num.className = 'date-num';
     num.textContent = d;
@@ -558,7 +569,7 @@ function refreshSelectionsUI() {
 
     if (!iso) return;
     const dow = parseISODate(iso).getDay(); // 0 Sun .. 6 Sat (Fri === 5)
-    if (selectedDates.has(iso)) {
+    if (selectedDates.has(iso) || prebookedDates.has(iso)) {
       cell.classList.add('selected');
     } else {
       cell.classList.remove('selected');
@@ -694,7 +705,7 @@ function getHolidayCost(iso) {
   const date = parseISODate(iso);
   const dow = date.getDay(); // 0 Sun .. 6 Sat
 
-  if (publicHolidayDates.has(iso) || dow === 0 || dow === 6) {
+  if (publicHolidayDates.has(iso) || dow === 0 || dow === 6 || preBookedDates.has(iso)) {
     return 0;
   }
 
@@ -761,6 +772,11 @@ function exportICS() {
     let otherholidayreason = otherHolidayDates.get(iso);
     if (otherholidayreason)
       summary += ' and your event ' + otherholidayreason;
+    if(prebookedDates.get(iso)) {
+      if (otherholidayreason)
+        summary += '. ';
+      summary += 'Which you have already booked off.';
+    }
     lines.push('SUMMARY:' + summary);
     lines.push('END:VEVENT');
   });

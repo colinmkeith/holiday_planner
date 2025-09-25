@@ -426,16 +426,6 @@ function makeMonthCalendar(year, monthIndex) {
     arialabel = parseISODate(iso).toString().split(' 00')[0];
     const historical = historyToggle.checked ? date < now : false;
 
-    const isosplit = iso.split('-');
-    if (parseInt(isosplit[0], 10) === now.getFullYear() &&
-        parseInt(isosplit[1], 10) === now.getMonth()+1  &&
-        parseInt(isosplit[2], 10) === now.getDate() ) {
-      cell.classList.add('today');
-      today = cell;
-      arialabel += " Today's date.";
-      cell.setAttribute('aria-current', 'date');
-    }
-
     const dow = date.getDay();
     if (dow === 0 || dow === 6) {
       cell.classList.add('weekend');
@@ -557,18 +547,15 @@ function selectLogic(isoDate, isCurrentlySelected, ctrlKey) {
 /* ------------------ UI refresh ------------------ */
 function refreshSelectionsUI() {
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
 
   document.querySelectorAll('.day-cell').forEach(cell => {
     const iso = cell.dataset.date;
 
     if (!iso) return;
 
-/*
-    let [ yyyy, mm, dd ] = iso.split('-');
-    mm = parseInt(mm);
-    dd = parseInt(dd);
-*/
     const date = parseISODate(iso);
+    date.setHours(0, 0, 0, 0);
     const dow = date.getDay(); // 0 Sun .. 6 Sat (Fri === 5)
 
     let arialabel = parseISODate(iso).toString().split(' 00')[0];
@@ -584,6 +571,12 @@ function refreshSelectionsUI() {
     if (historical) {
       cell.classList.add('historical');
       arialabel += ' historical date so not selectable.';
+    }
+
+    if (date.getTime() == now.getTime()) {
+      cell.classList.add('today');
+      arialabel += " Today's date.";
+      cell.setAttribute('aria-current', 'date');
     }
 
     if (publicHolidayDates.has(iso)) {

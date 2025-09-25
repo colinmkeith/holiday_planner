@@ -120,6 +120,7 @@
               <div class="nav nav-tabs" id="nav-tab-dates" role="tablist">
                 <button class="nav-link active" id="nav-select-dates-tab" data-bs-toggle="tab" data-bs-target="#nav-select-dates" type="button" role="tab" aria-controls="nav-select-dates" aria-selected="true">Selected Dates</button>
                 <button class="nav-link" id="nav-other-dates-tab" data-bs-toggle="tab" data-bs-target="#nav-other-dates" type="button" role="tab" aria-controls="nav-other-dates" aria-selected="false">Other Dates</button>
+                <button class="nav-link" id="nav-import-dates-tab" data-bs-toggle="tab" data-bs-target="#nav-import-dates" type="button" role="tab" aria-controls="nav-import-dates" aria-selected="false">Import Dates</button>
                 <button class="nav-link" id="nav-help-tab" data-bs-toggle="tab" data-bs-target="#nav-help" type="button" role="tab" aria-controls="nav-help" aria-selected="false">Help</button>
               </div>
             </nav>
@@ -139,6 +140,11 @@
               <div class="tab-pane fade border" id="nav-other-dates" role="tabpanel" aria-labelledby="nav-other-dates-tab" tabindex="1">
                 <h6 class="card-title mb-2">Your other dates. (See help for format)</h6>
                 <textarea class="form-control" id="otherdates" placeholder="Format: YYYY-MM-DD,Label[,Booked]" spellcheck=true></textarea>
+              </div>
+
+              <div class="tab-pane fade border" id="nav-import-dates" role="tabpanel" aria-labelledby="nav-import-dates-tab" tabindex="1">
+                <h6 class="card-title mb-2">Bulk import Other dates. (See help for format)</h6>
+                <input class="form-control" type="file" id="importdates" accept=".csv, text/csv, .txt, text/plain">
               </div>
 
               <div class="tab-pane fade show border" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab" tabindex="0">
@@ -355,6 +361,7 @@ const historyToggle = document.getElementById('historyToggle');
 const themeToggle = document.getElementById('themeToggle');
 const otherTab = document.getElementById('nav-other-dates-tab');
 const othersEl = document.getElementById('otherdates');
+const importDatesEl = document.getElementById('importdates');
 
 /* ------------------ Calendar rendering ------------------ */
 function buildYearOptions() {
@@ -851,6 +858,36 @@ function attachControls() {
     document.documentElement.setAttribute('data-bs-theme', currentTheme);
     localStorage.setItem('holidayPlannerTheme', currentTheme);
   });
+
+  importDatesEl.addEventListener('change', (ev) => {
+    // Check if any file was selected
+    const file = ev.target.files[0];
+
+    if (!file)
+      return;
+
+    // 1. Create a FileReader instance
+    const reader = new FileReader();
+
+    // 2. Define the onload function, which runs when the file is successfully read
+    reader.onload = (e) => {
+      // e.target.result contains the entire content of the file as a string
+      const fileContents = e.target.result;
+
+      // Insert the contents into the othersEl
+      othersEl.value = fileContents;
+      document.getElementById('nav-other-dates-tab').click();
+    };
+
+    // 3. Define the onerror function for handling reading errors
+    reader.onerror = (e) => {
+      console.error("Error reading file:", e);
+    };
+
+    // 4. Start reading the file as text
+    // This method handles both .csv and .txt as plain text
+    reader.readAsText(file);
+  });
 }
 
 function processOtherHolidayDates() {
@@ -882,19 +919,19 @@ function processOtherHolidayDates() {
     if (typeof(res) !== 'object' || !res[1])
       return;
 
-    let [undef, startdate, enddate, label, prebooked] = res;
-    if (!enddate)
-      enddate = startdate;
+    let [undef, startDate, endDate, label, prebooked] = res;
+    if (!endDate)
+      endDate = startDate;
 
-    enddate = new Date(enddate);
-    curdate = new Date(startdate);
+    endDate = new Date(endDate);
+    curDate = new Date(startDate);
 
-    while (curdate <= enddate) {
+    while (curDate <= endDate) {
       // Silently ignore years in the past because they can never be displayed
-      if (curdate.getFullYear() < curYear)
+      if (curDate.getFullYear() < curYear)
         return;
 
-      const iso = formatDateISO(curdate);
+      const iso = formatDateISO(curDate);
       otherHolidayDates.set(iso, label);
 
       if (prebooked)

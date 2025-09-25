@@ -850,8 +850,15 @@ function processOtherHolidayDates() {
     if (!line) return;
 
     const res = line.match(/^([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}),(.*)$/);
-    if(typeof(res) === 'object' && res[1] && res[2]) {
-      let [undef, date, line] = res;
+
+    if (res === null)
+      return;
+
+    if (typeof(res) === 'object' && res[1] && res[2]) {
+      if (res[2] = res[2].replace(/,(?:1|booked)$/, '')) {
+        res[3] = 1;
+      }
+      let [undef, date, line, prebooked] = res;
 
       const [yy, mm, dd] = date.split('-');
       date = `${yy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
@@ -864,7 +871,11 @@ function processOtherHolidayDates() {
       const label = res[2].replace(/^"(.+)"$/, '$1') /* CSV */
                           .replace(/^\s+/, '')
                           .replace(/\s+$/, '');
-      otherHolidayDates.set(res[1], label);
+      otherHolidayDates.set(date, label);
+
+      if (prebooked) {
+        prebookedDates.add(date);
+      }
     }
   });
 }

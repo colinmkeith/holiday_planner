@@ -54,6 +54,7 @@
     .holiday:not(.otherday) { outline: 2px dashed #dc3545; }
     .otherday:not(.holiday) { outline: 2px dashed #6dbb4e; }
     .holiday.otherday { outline: 2px dashed #FFBF00; }
+    .today { outline: 2px dashed #FFEA00; }
 
     html[data-bs-theme="light"] body { background: #f8f9fa; }
     html[data-bs-theme="light"] .calendar-month { border: 1px solid #dee2e6; background: #fff; }
@@ -423,13 +424,7 @@ function makeMonthCalendar(year, monthIndex) {
     cell.setAttribute('role', 'gridcell');
 
     arialabel = parseISODate(iso).toString().split(' 00')[0];
-
-    // If historicalToggle not checked then don't treat as historical
     const historical = historyToggle.checked ? date < now : false;
-    if (historical) {
-      cell.classList.add('historical');
-      arialabel += ' historical date so not selectable.';
-    }
 
     const isosplit = iso.split('-');
     if (parseInt(isosplit[0], 10) === now.getFullYear() &&
@@ -561,15 +556,34 @@ function selectLogic(isoDate, isCurrentlySelected, ctrlKey) {
 
 /* ------------------ UI refresh ------------------ */
 function refreshSelectionsUI() {
+  const now = new Date();
+
   document.querySelectorAll('.day-cell').forEach(cell => {
     const iso = cell.dataset.date;
 
     if (!iso) return;
-    const dow = parseISODate(iso).getDay(); // 0 Sun .. 6 Sat (Fri === 5)
+
+/*
+    let [ yyyy, mm, dd ] = iso.split('-');
+    mm = parseInt(mm);
+    dd = parseInt(dd);
+*/
+    const date = parseISODate(iso);
+    const dow = date.getDay(); // 0 Sun .. 6 Sat (Fri === 5)
+
+    let arialabel = parseISODate(iso).toString().split(' 00')[0];
+
     if (selectedDates.has(iso) || prebookedDates.has(iso)) {
       cell.classList.add('selected');
     } else {
       cell.classList.remove('selected');
+    }
+
+    // If historicalToggle not checked then don't treat as historical
+    const historical = historyToggle.checked ? date < now : false;
+    if (historical) {
+      cell.classList.add('historical');
+      arialabel += ' historical date so not selectable.';
     }
 
     if (publicHolidayDates.has(iso)) {
@@ -875,6 +889,7 @@ function changeInInputs() {
   setPublicHolidays(year);
   processOtherHolidayDates();
   renderCalendars(year);
+  refreshSelectionsUI();
   updateTotals();
 }
 

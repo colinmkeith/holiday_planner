@@ -426,13 +426,6 @@ function makeMonthCalendar(year, monthIndex) {
     arialabel = parseISODate(iso).toString().split(' 00')[0];
     const historical = historyToggle.checked ? date < now : false;
 
-    if (publicHolidayDates.has(iso)) {
-      cell.classList.add('holiday');
-      cell.setAttribute('data-bs-toggle', 'tooltip');
-      cell.setAttribute('title', (historical ? 'Was ' : '') + publicHolidayDates.get(iso));
-      arialabel += ' Is a public holiday ('+ publicHolidayDates.get(iso) + ')';
-    }
-
     if (otherHolidayDates.has(iso)) {
       cell.classList.add('otherday');
       cell.setAttribute('data-bs-toggle', 'tooltip');
@@ -580,6 +573,9 @@ function refreshSelectionsUI() {
 
     if (publicHolidayDates.has(iso)) {
       cell.classList.add('holiday');
+      cell.setAttribute('data-bs-toggle', 'tooltip');
+      cell.setAttribute('title', (historical ? 'Was ' : '') + publicHolidayDates.get(iso));
+      arialabel += ' Is a public holiday ('+ publicHolidayDates.get(iso) + ')';
     } else {
       cell.classList.remove('holiday');
     }

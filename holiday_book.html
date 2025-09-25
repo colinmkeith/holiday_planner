@@ -506,7 +506,6 @@ function handleDateClick(isoDate, ev) {
   const ctrlKey = ev.ctrlKey;
   const shiftKey = ev.shiftKey;
   const isCurrentlySelected = selectedDates.has(isoDate);
-
   const cell = ev.target.classList.contains('date-num') ? ev.target.parentNode : ev.target;
 
   if(cell.classList.contains('disabled') || cell.classList.contains('historical')) return;

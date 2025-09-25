@@ -426,12 +426,6 @@ function makeMonthCalendar(year, monthIndex) {
     arialabel = parseISODate(iso).toString().split(' 00')[0];
     const historical = historyToggle.checked ? date < now : false;
 
-    const dow = date.getDay();
-    if (dow === 0 || dow === 6) {
-      cell.classList.add('weekend');
-      arialabel += " Is a weekend day.";
-    }
-
     if (publicHolidayDates.has(iso)) {
       cell.classList.add('holiday');
       cell.setAttribute('data-bs-toggle', 'tooltip');
@@ -577,6 +571,11 @@ function refreshSelectionsUI() {
       cell.classList.add('today');
       arialabel += " Today's date.";
       cell.setAttribute('aria-current', 'date');
+    }
+
+    if (dow === 0 || dow === 6) {
+      cell.classList.add('weekend');
+      arialabel += " Is a weekend day.";
     }
 
     if (publicHolidayDates.has(iso)) {

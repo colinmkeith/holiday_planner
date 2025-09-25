@@ -902,7 +902,7 @@ function processOtherHolidayDates() {
       if (prebooked)
         prebookedDates.add(iso);
 
-      curdate.setTime(curdate.getTime() + 86400000);
+      curDate.setDate(curDate.getDate() + 1);
     }
   });
 }

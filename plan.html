@@ -378,11 +378,6 @@ function buildYearOptions() {
   yearSelect.value = currentYear;
 }
 
-function clearCalendars() {
-  calendarsEl.innerHTML = '';
-  today = false;
-}
-
 function makeMonthCalendar(year, monthIndex) {
   const monthDate = new Date(year, monthIndex, 1);
   const monthName = monthDate.toLocaleString(undefined, { month: 'long' });
@@ -455,7 +450,8 @@ function makeMonthCalendar(year, monthIndex) {
 }
 
 function renderCalendars(year) {
-  clearCalendars();
+  calendarsEl.innerHTML = '';
+
   for (let m = 0; m < 12; m++) {
     calendarsEl.appendChild(makeMonthCalendar(year, m));
   }
@@ -464,7 +460,8 @@ function renderCalendars(year) {
 
   // Enable bootstrap tooltips for any holiday cells
   rebuildTooltips();
-  if(today !== false) {
+  const today = (document.getElementsByClassName('today') || [])[0];
+  if(today) {
     today.scrollIntoView();
   }
 }

@@ -109,7 +109,7 @@
 
             <div class="mb-2">
               <h6 class="card-title">Remaining Holiday</h6>
-              <div>
+              <div id="remaining" class="form-control">
                 <span id="remainingHoliday" class="fs-5">0:00</span>
                 <span class="hours-suffix small-muted">hours</span>
               </div>
@@ -780,14 +780,25 @@ function updateTotals() {
   const totalInput = totalHolidayInput.value.trim();
   const totalMinutes = hhmmToMinutes(totalInput);
   const usedMinutes = computeUsedMinutes();
+
+  const reEl = document.getElementById('remaining');
+
   if(Number.isNaN(totalMinutes)) {
     remainingEl.textContent = 'NaN';
     remainingEl.classList.add('text-danger');
+    reEl.classList.add('is-invalid');
   } else {
     const remaining = totalMinutes - usedMinutes;
     remainingEl.textContent = minutesToHHMM(remaining);
-    if(remaining < 0) remainingEl.classList.add('text-danger');
-    else remainingEl.classList.remove('text-danger');
+    if(remaining < 0) {
+      remainingEl.classList.add('text-danger');
+      reEl.classList.add('is-invalid');
+      reEl.classList.add('is-valid');
+    } else {
+      remainingEl.classList.remove('text-danger');
+      reEl.classList.add('is-valid');
+      reEl.classList.remove ('is-invalid');
+    }
   }
 }
 

@@ -34,13 +34,13 @@
 
     .delete { cursor: pointer; }
 
-    @media (min-width: 1000px) {
+    @media (min-width: 1115px) {
       .sidebar > .card {
         position: fixed;
         top: 0;
         right: 0;
         width: 25%; /* keep roughly the same width */
-        max-height: 100vh; 
+        max-height: 100vh;
         overflow-y: auto; /* allow scroll inside if too tall */
       }
     }
@@ -463,6 +463,22 @@ function renderCalendars(year) {
 
   for (let m = 0; m < 12; m++) {
     calendarsEl.appendChild(makeMonthCalendar(year, m));
+  }
+
+  // See if we can shrink some calendars
+  if(window.screen.width > 1114) {
+    let mCount = new Array();
+    const dayGrids = document.querySelectorAll(`.day-grid`);
+    dayGrids.forEach(function(el, index) { mCount.push(el.querySelectorAll('.day-cell:nth-child(n+36).pad').length); }  );
+
+    for(q=0; q<4; q++) {
+      x = q*3;
+      if (mCount[x] === mCount[x+1] && mCount[x] === mCount[x+2]) {
+        dayGrids[x].querySelectorAll('.day-cell:nth-child(n+36)').forEach(function(el) { el.parentNode.removeChild(el); })
+        dayGrids[x+1].querySelectorAll('.day-cell:nth-child(n+36)').forEach(function(el) { el.parentNode.removeChild(el); })
+        dayGrids[x+2].querySelectorAll('.day-cell:nth-child(n+36)').forEach(function(el) { el.parentNode.removeChild(el); })
+      }
+    }
   }
 
   refreshSelectionsUI();

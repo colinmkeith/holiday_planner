@@ -445,6 +445,14 @@ function makeMonthCalendar(year, monthIndex) {
     grid.appendChild(cell);
   }
 
+  const firstPadDay = daysInMonth + offset;
+  for(i=firstPadDay; i<42; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell disabled pad';
+    cell.setAttribute('role', 'gridcell');
+    grid.appendChild(cell);
+  }
+
   card.appendChild(grid);
   wrapper.appendChild(card);
   return wrapper;
